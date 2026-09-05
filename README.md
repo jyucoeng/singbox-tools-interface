@@ -50,21 +50,9 @@ wrangler deploy
 2. 授权 GitHub 并选择本仓库（`singbox-tools-interface`）；
 3. **Project name** 随意（如 `singbox-tools-interface`），**Production branch** 选 `main`；
 4. 构建配置：**Framework preset** 选 **None**，**Build command** 与 **Build output directory** 留空（纯静态单文件，无构建步骤）→ **Save and Deploy**；
-5. 之后每次 push 到 `main` 自动部署，地址为 `https://singbox-tools-interface.pages.dev`。
+5. 之后每次 push 到 `main` 自动部署，地址为 `https://singbox-tools-interface.pages.dev`。或者增加自定义域名。
 
-**② 控制台上传（免折腾仓库，快速体验）**
 
-1. **Workers & Pages** → **Create application** → **Pages** → **Upload assets**；
-2. 填写 **Project name**，把项目目录（或直接拖入 `index.html`）上传；
-3. 部署完成后即可通过 `https://<项目名>.pages.dev` 访问，之后想更新重新上传覆盖即可。
-
-**③ Wrangler CLI（可选）**
-
-```bash
-npx wrangler login
-cd singbox-tools-interface
-npx wrangler pages deploy . --project-name <项目名>
-```
 
 ## 部署方式三：GitHub Pages
 
