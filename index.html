@@ -386,8 +386,8 @@
           </select>
         </div>
         <div class="row" id="row-socks5pt" style="display:none">
-          <label>Socks5 端口 <span class="pill">socks5pt</span></label>
-          <input type="text" class="port-input" id="socks5pt" placeholder="如 31017，或点 🎲 随机" inputmode="numeric">
+          <label>Socks5 端口 <span class="pill">socks5pt</span><span class="req">*</span></label>
+          <input type="text" class="port-input" id="socks5pt" placeholder="必填，如 31017，或点 🎲 随机" inputmode="numeric">
         </div>
         <div id="socks5-sub" style="display:none">
           <div class="row">
@@ -1009,6 +1009,22 @@
     });
     return msgs;
   }
+  function checkSocks5Required() {
+    if (currentTab() !== 'sb') return [];
+    var el = $id('socks5pt');
+    if (!el) return [];
+    if (val('socks5-on') === 'on') {
+      if (!val('socks5pt')) {
+        el.classList.add('err');
+        el.setAttribute('title', '已启用 Socks5：端口必填（可点 🎲 随机生成）');
+        return ['已启用 Socks5 但端口为空：命令将缺少 socks5pt，Socks5 不会启用（请填写端口或点 🎲）'];
+      }
+      return [];
+    }
+    el.classList.remove('err');
+    el.removeAttribute('title');
+    return [];
+  }
   // Socks5 账号/白名单区：由“启用 Socks5 协议”开关控制
   function syncSocks5() {
     // 由“启用 Socks5 协议”开关统一控制：启用则显示端口与账号/白名单，不启用则整体隐藏并清空
@@ -1154,14 +1170,17 @@
     syncSniByPort();
     syncSocks5();
     var conflicts = checkPortConflict();
+    var s5req = checkSocks5Required();
     syncTunnelType();
     var warn = '';
     if (conflicts.length) warn = conflicts.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
+    if (s5req.length) warn += s5req.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
     $id('cmd').value = warn + (currentTab() === 'sb' ? buildSb() : buildMtpNew());
     var mo = $id('mg-out');
     mo.value = warn + buildMg();
     autoGrow(mo);
     if (conflicts.length) uiError('存在端口冲突：' + conflicts.join('；'));
+    if (s5req.length) uiError(s5req.join('；'));
     setGlobalErr(UI_ERRORS);
     renumberCards();
   }
