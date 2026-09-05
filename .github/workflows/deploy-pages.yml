@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
+# 手动触发（仓库 Actions 页面 → Run workflow），不再随每次 push 自动运行。
+# 若希望仅在界面变更时自动部署，可恢复 push 并配合 paths 过滤 index.html。
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
 
 permissions:

@@ -2,7 +2,7 @@
 
 为 [jyucoeng/singbox-tools](https://github.com/jyucoeng/singbox-tools) 制作的一键 SSH 命令生成快捷界面（界面风格借鉴 [yonggekkk/argosbx](https://yonggekkk.github.io/argosbx/) 命令生成器），页头提供 [pkg.tbbbk.com](https://pkg.tbbbk.com/)（Linux 应用安装器）查询链接。
 
-一个项目，两种部署：**Cloudflare Workers** 与 **GitHub Pages** 任选，界面完全一致。
+一个项目，三种部署：**Cloudflare Pages（推荐）**、**Cloudflare Workers**、**GitHub Pages** 任选，界面完全一致。
 
 ## 功能
 
@@ -19,11 +19,36 @@
 | `worker.js` | Cloudflare Workers 部署文件（由 `build.py` 从 index.html 生成） |
 | `wrangler.toml` | Wrangler 部署配置 |
 | `build.py` | 修改 index.html 后重新生成 worker.js：`python build.py` |
-| `.github/workflows/deploy-pages.yml` | GitHub Pages 自动部署（push 到 main 即部署） |
-| `.github/workflows/deploy-workers.yml` | Cloudflare Workers 手动部署（需配置 Secrets，见下文） |
+| `.github/workflows/deploy-pages.yml` | GitHub Pages 手动部署（Actions 手动触发，push 不再自动构建） |
 | `.nojekyll` | GitHub Pages 跳过 Jekyll 处理 |
 
-## 部署方式一：Cloudflare Workers
+## 部署方式一：Cloudflare Pages（推荐）
+
+纯静态部署，直接用 `index.html`（无需 worker.js），免费额度充足，访问地址为 `https://<项目名>.pages.dev`。
+
+**① 连接 GitHub 仓库（最推荐，push 即自动部署）**
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create application** → 顶部切到 **Pages** 标签 → **Connect to Git**；
+2. 授权 GitHub 并选择本仓库（`singbox-tools-interface`）；
+3. **Project name** 随意（如 `singbox-tools-interface`），**Production branch** 选 `main`；
+4. 构建配置：**Framework preset** 选 **None**，**Build command** 与 **Build output directory** 留空（纯静态单文件，无构建步骤）→ **Save and Deploy**；
+5. 之后每次 push 到 `main` 自动部署，地址为 `https://singbox-tools-interface.pages.dev`。
+
+**② 控制台上传（免折腾仓库，快速体验）**
+
+1. **Workers & Pages** → **Create application** → **Pages** → **Upload assets**；
+2. 填写 **Project name**，把项目目录（或直接拖入 `index.html`）上传；
+3. 部署完成后即可通过 `https://<项目名>.pages.dev` 访问，之后想更新重新上传覆盖即可。
+
+**③ Wrangler CLI（可选）**
+
+```bash
+npx wrangler login
+cd singbox-tools-interface
+npx wrangler pages deploy . --project-name <项目名>
+```
+
+## 部署方式二：Cloudflare Workers
 
 **① 控制台粘贴（最简单，无需本地环境）**
 
@@ -41,13 +66,9 @@ cd singbox-tools-interface
 wrangler deploy
 ```
 
-**③ GitHub 联动（手动触发）**
+## 部署方式三：GitHub Pages
 
-推送到 GitHub 后，在仓库 **Settings → Secrets and variables → Actions** 配置 `CLOUDFLARE_API_TOKEN`（Workers 编辑权限）与 `CLOUDFLARE_ACCOUNT_ID`，然后在 **Actions → Deploy to Cloudflare Workers → Run workflow** 手动运行即可部署/更新。
-
-## 部署方式二：GitHub Pages
-
-**① Actions 自动部署（推荐）**
+**① Actions 部署（手动触发）**
 
 1. 把本目录推送到 GitHub 仓库：
 
@@ -61,7 +82,7 @@ wrangler deploy
    ```
 
 2. 仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**（只需设置一次）；
-3. 之后每次 push 到 `main` 自动部署，地址为 `https://<你的用户名>.github.io/<仓库名>/`。
+3. 已改为**手动触发**：在 **Actions → Deploy to GitHub Pages → Run workflow** 手动运行才部署（push 不再自动构建），地址为 `https://<你的用户名>.github.io/<仓库名>/`。
 
 **② 分支部署（不用 Actions）**
 
@@ -71,11 +92,11 @@ Settings → Pages → Source 选 **Deploy from a branch** → Branch 选 `main`
 
 把 `index.html` 复制到已有仓库的 `docs/` 目录，Pages 设置 Branch 选 `main`、目录选 `/docs`，访问 `https://<用户名>.github.io/<仓库名>/`。
 
-> 只用其中一种部署方式时，删除 `.github/workflows/` 下不需要的 workflow 文件即可（例如只用 Workers 就删 `deploy-pages.yml`，免得每次 push 都跑 Pages 构建）。
+> 只用其中一种部署方式时，删除 `.github/workflows/` 下不需要的 workflow 文件即可（例如只用 Cloudflare 部署就删 `deploy-pages.yml`）。Cloudflare Pages 是在控制台直接关联仓库或上传部署的，**无需**任何 workflow 文件。
 
 ## 修改界面
 
-编辑 `index.html` 后运行 `python build.py` 重新生成 `worker.js`，再按上面任一方式重新部署。GitHub 联动时只需 push（worker.js 记得一并提交）。
+Cloudflare Pages / GitHub Pages 只用到 `index.html`：Pages 通过 Git 关联时改完 push 即自动部署，GitHub Pages 需在 Actions 手动运行 workflow；Cloudflare Workers 需先运行 `python build.py` 重新生成 `worker.js` 再部署（push 时 worker.js 记得一并提交）。
 
 ## 免责声明
 
