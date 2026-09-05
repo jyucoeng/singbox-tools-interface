@@ -72,7 +72,13 @@
     .tab:hover { color: var(--ink); border-color: var(--acc); }
     .tab.active { background: var(--acc); border-color: var(--acc); color: #fff; }
     .tabpane { display: none; }
-    .tabpane.active { display: block; }
+    .tabpane.active { display: block; animation: fadeUp .25s ease; }
+    /* 板块出现动画：从 display:none 恢复显示时自动重放 */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+    #mg-card, #mtpn-telemt-card { animation: fadeUp .25s ease; }
 
     /* ---------- grid & cards ---------- */
     .grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 20px; }
@@ -105,7 +111,7 @@
     .row > label { font-size: 14.5px; text-align: left; }
     @media (max-width: 700px) { .row > label { text-align: left; } }
     .ctl { display: flex; gap: 8px; }
-    .ctl > input, .ctl > select { flex: 1; min-width: 0; }
+    .ctl > input, .ctl > select, .ctl > textarea { flex: 1; min-width: 0; }
     .ctl > button { flex: 0 0 auto; }
     .ctl > select.sni-pick { flex: 0 0 auto; width: auto; max-width: 230px; }
     input[type="text"], select, textarea {
@@ -120,7 +126,10 @@
       transition: border-color .2s;
     }
     input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--acc); }
+    #mg-out { min-height: 120px; resize: vertical; line-height: 1.5; }
     input.err { border-color: var(--err); box-shadow: 0 0 0 1px var(--err); }
+    fieldset.lock-box { border: 0; margin: 0; padding: 0; min-width: 0; transition: opacity .25s; }
+    .card.locked .lock-box { opacity: .6; }
     input::placeholder { color: var(--sub); opacity: .65; }
     input:disabled { opacity: .4; cursor: not-allowed; }
     select { font-family: inherit; cursor: pointer; }
@@ -130,6 +139,7 @@
       background: var(--acc-soft); color: var(--acc);
       font-family: ui-monospace, Consolas, monospace; vertical-align: 1px;
     }
+    .req { color: var(--err); font-weight: 700; margin-left: 4px; }
 
     /* protocol grid */
     .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
@@ -165,6 +175,19 @@
     }
     .crow .cdesc { flex: 0 0 auto; max-width: 46%; font-size: 12.5px; color: var(--sub); }
     .crow button { flex: 0 0 auto; font-size: 12px; padding: 4px 10px; border-radius: 8px; }
+    .crow.hl {
+      padding: 8px 10px;
+      margin: 4px 0;
+      border: 1px solid var(--acc);
+      border-radius: 10px;
+      background: var(--acc-soft);
+      box-shadow: 0 0 0 1px var(--acc-soft), 0 0 14px rgba(79,124,255,.45);
+      animation: hlPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes hlPulse {
+      0%, 100% { box-shadow: 0 0 0 1px var(--acc-soft), 0 0 6px rgba(79,124,255,.35); }
+      50% { box-shadow: 0 0 0 1px var(--acc-soft), 0 0 18px rgba(79,124,255,.6); }
+    }
 
     /* ---------- output ---------- */
     .out-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0; }
@@ -410,9 +433,8 @@
         <div class="row">
           <label>安装模式 <span class="pill">INSTALL_MODE</span></label>
           <select id="mtpn-mode">
-            <option value="go" selected>Go 版 mtg（轻量，默认）</option>
-            <option value="telemt">Telemt 高性能版（多用户/配额/限速）</option>
-            <option value="menu">交互式菜单（无参数运行，忽略右侧参数）</option>
+            <option value="go">Go 版 mtg（轻量）</option>
+            <option value="telemt" selected>Telemt 高性能版（多用户/配额/限速，默认）</option>
           </select>
         </div>
         <div class="row">
@@ -442,39 +464,40 @@
         <p class="note">自定义 SECRET 后，无论重装多少次，分享链接保持一致（非法值将中止安装）。</p>
       </section>
 
-      <section class="card">
-        <h2>② Telemt 高性能版专属参数</h2>
-        <div class="row">
-          <label>初始管理员用户 <span class="pill">TELEMT_USER</span></label>
-          <input type="text" id="mtpn-user" placeholder="默认 admin">
-        </div>
-        <div class="row">
-          <label>月度流量配额 GB <span class="pill">TELEMT_QUOTA</span></label>
-          <input type="text" id="mtpn-quota" placeholder="如 100，留空不限流">
-        </div>
-        <div class="row">
-          <label>到期时间 <span class="pill">TELEMT_EXPIRE</span></label>
-          <input type="text" id="mtpn-expire" placeholder="如 2099-12-01 23:59:59，留空永久">
-        </div>
-        <div class="row">
-          <label>上行限速 MB/s <span class="pill">TELEMT_SPEED_UP</span></label>
-          <input type="text" id="mtpn-sup" placeholder="如 1.5，留空不限">
-        </div>
-        <div class="row">
-          <label>下行限速 MB/s <span class="pill">TELEMT_SPEED_DOWN</span></label>
-          <input type="text" id="mtpn-sdn" placeholder="如 5.0，留空同上行">
-        </div>
-        <div class="row">
-          <label>配额重置日 <span class="pill">TELEMT_RESET_DAY</span></label>
-          <input type="text" id="mtpn-reset" placeholder="如 1（每月 1 号，仅设配额后生效）" inputmode="numeric">
-        </div>
-        <p class="note">Go 版安装将忽略以上 Telemt 参数。</p>
+      <section class="card" id="mtpn-telemt-card">
+        <h2>③ Telemt 高性能版专属参数</h2>
+        <fieldset class="lock-box" id="mtpn-telemt-lock" disabled>
+          <div class="row">
+            <label>初始管理员用户 <span class="pill">TELEMT_USER</span></label>
+            <input type="text" id="mtpn-user" placeholder="默认 admin，不推荐直接用 admin">
+          </div>
+          <div class="row">
+            <label>月度流量配额 GB <span class="pill">TELEMT_QUOTA</span></label>
+            <input type="text" id="mtpn-quota" placeholder="如 100，留空不限流">
+          </div>
+          <div class="row">
+            <label>到期时间 <span class="pill">TELEMT_EXPIRE</span></label>
+            <input type="text" id="mtpn-expire" placeholder="如 2099-12-01 23:59:59，留空永久">
+          </div>
+          <div class="row">
+            <label>上行限速 MB/s <span class="pill">TELEMT_SPEED_UP</span></label>
+            <input type="text" id="mtpn-sup" placeholder="如 1.5，留空不限">
+          </div>
+          <div class="row">
+            <label>下行限速 MB/s <span class="pill">TELEMT_SPEED_DOWN</span></label>
+            <input type="text" id="mtpn-sdn" placeholder="如 5.0，留空同上行">
+          </div>
+          <div class="row">
+            <label>配额重置日 <span class="pill">TELEMT_RESET_DAY</span></label>
+            <input type="text" id="mtpn-reset" placeholder="如 1（每月 1 号，仅设配额后生效）" inputmode="numeric">
+          </div>
+        </fieldset>
       </section>
       </div>
 
       <div class="col">
       <section class="card">
-        <h2>③ 执行动作</h2>
+        <h2>② 执行动作</h2>
         <div class="row">
           <label>执行动作 <span class="pill">mtp-new.sh 尾部参数</span></label>
           <select id="mtpn-tail">
@@ -489,56 +512,62 @@
             <option value="usage_total">usage_total · 总流量统计</option>
           </select>
         </div>
-        <p class="note">del / list / start / stop / restart / usage 等管理动作只生成裸命令；交互式菜单模式不加尾部参数。</p>
+        <p class="note">del / list / start / stop / restart / usage 等管理动作只生成裸命令。</p>
       </section>
 
-      <section class="card">
+      <section class="card" id="mg-card">
         <h2>④ Telemt 多用户管理命令生成 <span class="tip">需 python3，安装时已自动安装</span></h2>
         <div class="row">
-          <label>管理命令</label>
-          <select id="mg-cmd">
-            <option value="adduser">adduser · 添加用户</option>
-            <option value="users">users · 查看所有用户链接</option>
-            <option value="getuser">getuser · 查询用户配置</option>
-            <option value="moduser">moduser · 修改用户配置</option>
-            <option value="deluser">deluser · 删除用户</option>
-          </select>
+          <label class="ck" for="mg-ready"><input type="checkbox" id="mg-ready"> 我已运行上方安装命令，管理员主账号（<span id="mg-main-user">admin</span>）已部署上线</label>
+          <p class="note" id="mg-lock-note">🔒 生成多用户管理命令前，请先在服务器运行上方「Telemt 高性能版」安装命令（rep / ins），确认管理员主账号已部署上线后勾选。</p>
         </div>
-        <div class="row">
-          <label>用户名 <span class="pill">TELEMT_USER</span></label>
-          <input type="text" id="mg-user" placeholder="如 vip01">
-        </div>
-        <div class="row">
-          <label>配额 GB <span class="pill">TELEMT_QUOTA</span></label>
-          <input type="text" id="mg-quota" placeholder="moduser：0 表示解除限制">
-        </div>
-        <div class="row">
-          <label>到期时间 <span class="pill">TELEMT_EXPIRE</span></label>
-          <input type="text" id="mg-expire" placeholder="如 2099-12-01 23:59:59；moduser：0 表示恢复永久">
-        </div>
-        <div class="row">
-          <label>专属端口 <span class="pill">TELEMT_DEDICATED_PORT</span></label>
-          <input type="text" id="mg-port" placeholder="moduser：0 表示恢复共享端口" inputmode="numeric">
-        </div>
-        <div class="row">
-          <label>通信密钥 <span class="pill">TELEMT_SECRET</span></label>
-          <div class="ctl">
-            <input type="text" id="mg-secret" placeholder="32 位 hex，留空自动生成">
-            <button type="button" class="mini" id="gen-mg-secret">生成</button>
+        <fieldset class="lock-box" id="mg-lock" disabled>
+          <div class="row">
+            <label>管理命令</label>
+            <select id="mg-cmd">
+              <option value="adduser">adduser · 添加用户</option>
+              <option value="users">users · 查看所有用户链接</option>
+              <option value="getuser">getuser · 查询用户配置</option>
+              <option value="moduser">moduser · 修改用户配置</option>
+              <option value="deluser">deluser · 删除用户</option>
+            </select>
           </div>
-        </div>
-        <div class="row">
-          <label>生成结果</label>
-          <div class="ctl">
-            <input type="text" id="mg-out" readonly placeholder="选择命令并填写参数后自动生成">
+          <div class="row" id="row-mg-user">
+            <label>子账号 <span class="pill">TELEMT_USER</span><span class="req">*</span></label>
+            <input type="text" id="mg-user" placeholder="如 vip01">
+          </div>
+          <div class="row" id="row-mg-quota">
+            <label>配额 GB <span class="pill">TELEMT_QUOTA</span></label>
+            <input type="text" id="mg-quota" placeholder="moduser：0 表示解除限制">
+          </div>
+          <div class="row" id="row-mg-expire">
+            <label>到期时间 <span class="pill">TELEMT_EXPIRE</span></label>
+            <input type="text" id="mg-expire" placeholder="如 2099-12-01 23:59:59；moduser：0 表示恢复永久">
+          </div>
+          <div class="row" id="row-mg-port">
+            <label>专属端口 <span class="pill">TELEMT_DEDICATED_PORT</span></label>
+            <input type="text" id="mg-port" placeholder="moduser：0 表示恢复共享端口" inputmode="numeric">
+          </div>
+          <div class="row" id="row-mg-secret">
+            <label>通信密钥 <span class="pill">TELEMT_SECRET</span></label>
+            <div class="ctl">
+              <input type="text" id="mg-secret" placeholder="32 位 hex，留空自动生成">
+              <button type="button" class="mini" id="gen-mg-secret">生成</button>
+            </div>
+          </div>
+          <div class="row">
+            <label>生成结果</label>
+            <div class="ctl">
+<textarea id="mg-out" rows="2" readonly spellcheck="false" wrap="soft" placeholder="选择命令并填写参数后自动生成"></textarea>
             <button type="button" class="mini" id="mg-copy">复制</button>
+            </div>
           </div>
-        </div>
+        </fieldset>
       </section>
       </div>
 
       <section class="card span2">
-        <h2>mtp 管理命令速查</h2>
+        <h2>mtp 管理命令速查 <span class="pill" id="mtpn-cmds-flag">Go 版</span></h2>
         <div class="cmdlist" id="mtpn-cmds"></div>
       </section>
     </div>
@@ -665,7 +694,7 @@
     box.innerHTML = '';
     rows.forEach(function (r) {
       var div = document.createElement('div');
-      div.className = 'crow';
+      div.className = 'crow' + (r[2] === 'hl' ? ' hl' : '');
       var code = document.createElement('code');
       code.textContent = r[0];
       var desc = document.createElement('span');
@@ -714,24 +743,38 @@
   function mtpnLine(args, desc) {
     return ['bash <(curl -Ls ' + URLS.mtpnew + ')' + (args ? ' ' + args : ''), desc];
   }
-  var MTPN_CMDS = [
+  // 带环境变量前缀的示例命令（envStr 用双引号包裹，内部可写单引号）
+  function mtpnEnv(envStr, args, desc) {
+    return [envStr + ' bash <(curl -Ls ' + URLS.mtpnew + ')' + (args ? ' ' + args : ''), desc];
+  }
+  var MTPN_CMDS_COMMON = [
     mtpnLine('ins', '安装（不清理旧配置）'),
     mtpnLine('rep', '覆盖重装（保留脚本本体与 mtp 命令）'),
     mtpnLine('del', '全量卸载并清理'),
     mtpnLine('start', '启动服务'),
     mtpnLine('stop', '停止服务'),
     mtpnLine('restart', '重启服务'),
-    mtpnLine('list', '查看已安装服务连接信息'),
-    mtpnLine('users', '查看 Telemt 用户列表及专属分享链接'),
-    ['TELEMT_USER=vip01 bash <(curl -Ls ' + URLS.mtpnew + ') adduser', '添加 Telemt 用户（密钥自动生成）'],
-    ['TELEMT_USER=vip01 bash <(curl -Ls ' + URLS.mtpnew + ') getuser', '查询指定用户当前配置'],
-    ['TELEMT_USER=vip01 bash <(curl -Ls ' + URLS.mtpnew + ') moduser', '修改用户（配额/到期/限速/端口/密钥）'],
-    ['TELEMT_USER=vip01 bash <(curl -Ls ' + URLS.mtpnew + ') deluser', '删除指定用户'],
-    mtpnLine('force_reset', '手动立即触发配额重置'),
+    mtpnLine('list', '查看已安装服务连接信息')
+  ];
+  var MTPN_CMDS_TELEMT = [
+    ['bash <(curl -Ls ' + URLS.mtpnew + ') users', '查看 Telemt 用户列表及专属分享链接', 'hl'],
+    mtpnEnv("TELEMT_USER='vip01' TELEMT_QUOTA=100 TELEMT_EXPIRE='2099-12-01 23:59:59' TELEMT_DEDICATED_PORT=20301 TELEMT_SPEED_UP='1.5' TELEMT_SPEED_DOWN='5.0'", 'adduser', '添加 Telemt 用户（配额/到期/专属端口/上下行限速；通信密钥留空自动生成）'),
+    mtpnEnv("TELEMT_USER='vip01'", 'getuser', '查询指定用户当前配置'),
+    mtpnEnv("TELEMT_USER='vip01' TELEMT_QUOTA=200 TELEMT_EXPIRE='2027-06-30 23:59:59'", 'moduser', '修改用户（示例改配额+到期；支持 密钥/端口/配额/到期/限速，填 0 解除）'),
+    mtpnEnv("TELEMT_USER='vip01'", 'deluser', '删除指定用户'),
+    mtpnLine('force_reset', '手动立即重置全部活跃用户的月度配额（不需要任何参数，无视配额重置日）'),
     mtpnLine('usage', '本月流量使用统计（含耗尽时间）'),
     mtpnLine('usage_total', '总流量统计（历史累计排名）'),
     mtpnLine('tg_report', '立即推送本月统计到 Telegram')
   ];
+  // mtp 管理命令速查按 INSTALL_MODE 动态渲染：Go 版只显示通用命令，Telemt 版才追加用户管理类命令
+  function renderMtpnCmds() {
+    var mode = val('mtpn-mode');
+    var isTelemt = mode === 'telemt';
+    var flag = $id('mtpn-cmds-flag');
+    if (flag) flag.textContent = isTelemt ? 'Telemt 高性能版' : 'Go 版';
+    renderCmdList('mtpn-cmds', MTPN_CMDS_COMMON.concat(isTelemt ? MTPN_CMDS_TELEMT : []));
+  }
 
   /* ---------------- 命令生成 ---------------- */
   var SB_MGMT_TAILS = ['del', 'delall', 'list', 'list key', 'ups'];
@@ -793,7 +836,6 @@
     var mode = val('mtpn-mode');
     var tail = val('mtpn-tail') || 'rep';
     if (MTPN_MGMT_TAILS.indexOf(tail) >= 0) return wrapCmd([], URLS.mtpnew, tail);
-    if (mode === 'menu') return wrapCmd([], URLS.mtpnew, '');
     var envs = [];
     numEnv('PORT', 'mtpn-port', envs);
     strEnv('DOMAIN', 'mtpn-domain', envs);
@@ -816,7 +858,13 @@
 
   /* ---------------- Telemt 用户管理 ---------------- */
   function buildMg() {
+    // ④ 勾选文案里的主账号名跟随 ② TELEMT_USER 输入实时变化
+    var mu = $id('mg-main-user');
+    if (mu) mu.textContent = val('mtpn-user') || 'admin';
     expireClear('mg-expire');
+    var mode = val('mtpn-mode');
+    var ready = $id('mg-ready') && $id('mg-ready').checked;
+    if (mode !== 'telemt' || !ready) return '';
     var c = val('mg-cmd') || 'adduser';
     var fetcher = 'curl -Ls ' + URLS.mtpnew;
     var user = val('mg-user');
@@ -832,7 +880,7 @@
       numEnv('TELEMT_DEDICATED_PORT', 'mg-port', envs);
     }
     var s = '';
-    envs.forEach(function (p) { if (p[1] !== '') s += p[0] + '=' + p[1] + ' '; });
+    envs.forEach(function (p) { if (p[1] !== '') s += p[0] + '=' + p[1] + ' \\\n'; });
     return s + 'bash <(curl -Ls ' + URLS.mtpnew + ') ' + c;
   }
   function strEnv2(k, id, envs) { var v = val(id); if (v) envs.push([k, qv(v)]); }
@@ -855,6 +903,64 @@
     var mode = val('mtpn-mode');
     var isTelemt = mode === 'telemt';
     $id('mtpn-secret-label').textContent = isTelemt ? 'TELEMT_SECRET' : 'SECRET';
+    // ② Telemt 专属参数：仅 Telemt 模式显示
+    var tCard = $id('mtpn-telemt-card');
+    var tLock = $id('mtpn-telemt-lock');
+    var tNote = $id('mtpn-telemt-note');
+    if (tCard) tCard.style.display = isTelemt ? '' : 'none';
+    if (tLock) tLock.disabled = false;
+    syncMgLock();
+    renderMtpnCmds();
+  }
+  // ④ Telemt 多用户管理：选 Go 版时整体隐藏；选 Telemt 版时需勾选确认主账号后解锁
+  function syncMgLock() {
+    var card = $id('mg-card');
+    if (!card) return;
+    var mode = val('mtpn-mode');
+    if (mode !== 'telemt') {
+      var rb = $id('mg-ready');
+      if (rb) rb.checked = false;
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = '';
+    var ready = $id('mg-ready') && $id('mg-ready').checked;
+    var lock = $id('mg-lock');
+    if (lock) lock.disabled = !ready;
+    card.classList.toggle('locked', !ready);
+    var note = $id('mg-lock-note');
+    if (note) note.textContent = ready
+      ? '✅ 管理员主账号已确认部署，可生成 Telemt 多用户管理命令。'
+      : '🔒 生成多用户管理命令前，请先在服务器运行上方「Telemt 高性能版」安装命令（rep / ins），确认管理员主账号已部署上线后勾选。';
+    var out = $id('mg-out');
+    if (ready) {
+      out.placeholder = '选择命令并填写参数后自动生成';
+    } else {
+      out.placeholder = '🔒 未解锁：需先确认完成主账号安装';
+      out.value = '';
+    }
+  }
+
+  // ④ 参数行按选中的管理命令显示（对齐 mtp-new.sh 各命令读取的字段）：
+  //   users 全隐藏；getuser/deluser 仅用户名；adduser/moduser 全部显示
+  function syncMgFields() {
+    var c = val('mg-cmd') || 'adduser';
+    var showUser = c !== 'users';
+    var showAll = c === 'adduser' || c === 'moduser';
+    function vis(id, on) { var el = $id(id); if (el) el.style.display = on ? '' : 'none'; }
+    vis('row-mg-user', showUser);
+    vis('row-mg-quota', showAll);
+    vis('row-mg-expire', showAll);
+    vis('row-mg-port', showAll);
+    vis('row-mg-secret', showAll);
+    // 提示文案按命令切换（对齐 mtp-new.sh 各命令的留空默认值）
+    var isMod = c === 'moduser';
+    var isAdd = c === 'adduser';
+    if (u) u.placeholder = isAdd ? '如 vip01（必填）' : '如 vip01';
+    if (q) q.placeholder = isAdd ? '如 100，留空不限流' : (isMod ? '0 解除限制 / 如 100' : '');
+    if (e) e.placeholder = isAdd ? '如 2099-12-01 23:59:59，留空永久' : (isMod ? '0 恢复永久 / 2099-12-01 23:59:59' : '');
+    if (p) p.placeholder = isAdd ? '留空用共享端口，或填如 20301' : (isMod ? '0 恢复共享端口 / 如 20301' : '');
+    if (s) s.placeholder = isAdd ? '32 位 hex，留空自动生成' : (isMod ? '留空表示不修改，或填 32 位 hex' : '');
   }
 
   /* ---------------- 当前 Tab 与总刷新 ---------------- */
@@ -862,9 +968,17 @@
     var b = document.querySelector('.tab.active');
     return b ? b.getAttribute('data-tab') : 'sb';
   }
+  function autoGrow(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
   function regen() {
+    syncMgFields();
     $id('cmd').value = currentTab() === 'sb' ? buildSb() : buildMtpNew();
-    $id('mg-out').value = buildMg();
+    var mo = $id('mg-out');
+    mo.value = buildMg();
+    autoGrow(mo);
   }
 
   /* ---------------- 事件绑定 ---------------- */
@@ -989,7 +1103,7 @@
   });
 
   renderCmdList('sb-cmds', SB_CMDS);
-  renderCmdList('mtpn-cmds', MTPN_CMDS);
+  renderMtpnCmds();
   // MTProxy 新版：打开时端口 / 通信密钥默认给随机值
   if (!$id('mtpn-port').value) $id('mtpn-port').value = String(randPort());
   if (!$id('mtpn-secret').value) $id('mtpn-secret').value = genHex32();
