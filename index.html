@@ -120,6 +120,7 @@
       transition: border-color .2s;
     }
     input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--acc); }
+    input.err { border-color: var(--err); box-shadow: 0 0 0 1px var(--err); }
     input::placeholder { color: var(--sub); opacity: .65; }
     input:disabled { opacity: .4; cursor: not-allowed; }
     select { font-family: inherit; cursor: pointer; }
@@ -453,7 +454,7 @@
         </div>
         <div class="row">
           <label>到期时间 <span class="pill">TELEMT_EXPIRE</span></label>
-          <input type="text" id="mtpn-expire" placeholder="如 2026-12-31 23:59:59，留空永久">
+          <input type="text" id="mtpn-expire" placeholder="如 2099-12-01 23:59:59，留空永久">
         </div>
         <div class="row">
           <label>上行限速 MB/s <span class="pill">TELEMT_SPEED_UP</span></label>
@@ -513,7 +514,7 @@
         </div>
         <div class="row">
           <label>到期时间 <span class="pill">TELEMT_EXPIRE</span></label>
-          <input type="text" id="mg-expire" placeholder="moduser：0 表示恢复永久">
+          <input type="text" id="mg-expire" placeholder="如 2099-12-01 23:59:59；moduser：0 表示恢复永久">
         </div>
         <div class="row">
           <label>专属端口 <span class="pill">TELEMT_DEDICATED_PORT</span></label>
@@ -583,6 +584,23 @@
 
   /* ---------------- helpers ---------------- */
   function isNum(v) { return /^-?\d+(\.\d+)?$/.test(v); }
+  // TELEMT_EXPIRE 格式校验：YYYY-MM-DD HH:MM:SS（如 2099-12-01 23:59:59）
+  function validExpire(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(v);
+    if (!m) return false;
+    var mo = +m[2], d = +m[3], h = +m[4], mi = +m[5], s = +m[6];
+    if (mo < 1 || mo > 12 || d < 1 || d > new Date(+m[1], mo, 0).getDate()) return false;
+    return h < 24 && mi < 60 && s < 60;
+  }
+  // 到期时间非法时：输入框标红 + 命令框输出错误注释（以 # 开头，误复制到终端也只是注释）
+  function expireErr(id) {
+    $id(id).classList.add('err');
+    return '# ⚠️ 到期时间（TELEMT_EXPIRE）格式错误：应为 YYYY-MM-DD HH:MM:SS，如 2099-12-01 23:59:59';
+  }
+  function expireClear(id) {
+    var e = $id(id);
+    if (e) e.classList.remove('err');
+  }
   // sb.sh 要求字符串值用英文单引号包裹；数字裸写
   function qv(v) {
     if (v === '') return "''";
@@ -771,6 +789,7 @@
   }
 
   function buildMtpNew() {
+    expireClear('mtpn-expire');
     var mode = val('mtpn-mode');
     var tail = val('mtpn-tail') || 'rep';
     if (MTPN_MGMT_TAILS.indexOf(tail) >= 0) return wrapCmd([], URLS.mtpnew, tail);
@@ -782,6 +801,7 @@
     if (mode === 'go') {
       strEnv('SECRET', 'mtpn-secret', envs);
     } else {
+      if (val('mtpn-expire') && !validExpire(val('mtpn-expire'))) return expireErr('mtpn-expire');
       envs.push(['INSTALL_MODE', "'telemt'"]);
       strEnv('TELEMT_USER', 'mtpn-user', envs);
       strEnv('TELEMT_SECRET', 'mtpn-secret', envs);
@@ -796,6 +816,7 @@
 
   /* ---------------- Telemt 用户管理 ---------------- */
   function buildMg() {
+    expireClear('mg-expire');
     var c = val('mg-cmd') || 'adduser';
     var fetcher = 'curl -Ls ' + URLS.mtpnew;
     var user = val('mg-user');
@@ -803,6 +824,8 @@
     if (!user) return '';
     var envs = [['TELEMT_USER', qv(user)]];
     if (c === 'adduser' || c === 'moduser') {
+      var mgExp = val('mg-expire');
+      if (mgExp && mgExp !== '0' && !validExpire(mgExp)) return expireErr('mg-expire');
       strEnv2('TELEMT_QUOTA', 'mg-quota', envs);
       strEnv2('TELEMT_EXPIRE', 'mg-expire', envs);
       strEnv2('TELEMT_SECRET', 'mg-secret', envs);
