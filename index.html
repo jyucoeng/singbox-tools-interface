@@ -96,6 +96,7 @@
     }
     body.light-mode .card { background: var(--card); box-shadow: 0 1px 3px rgba(15,23,42,.06); }
     .card h2 { margin: 0 0 6px; font-size: 19px; }
+    .card h2 .card-num { font-weight: 700; margin-right: 4px; }
     .card h3 { margin: 16px 0 8px; font-size: 15px; color: var(--acc); }
     .card h3:first-of-type { margin-top: 10px; }
     .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
@@ -1109,6 +1110,34 @@
     if (s) s.placeholder = isAdd ? '32 位 hex，留空自动生成' : (isMod ? '留空表示不修改，或填 32 位 hex' : '');
   }
 
+  /* ---------------- 卡片动态编号（避免显隐导致编号断档） ---------------- */
+  var CARD_NUMS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+  // 初始化：把卡片 h2 开头的编号包进 .card-num，便于动态重编号
+  function initCardNums() {
+    document.querySelectorAll('.col > .card > h2').forEach(function (h2) {
+      if (h2.getAttribute('data-num')) return;
+      var html = h2.innerHTML;
+      var m = /^[①-⑩]\s*/.exec(html);
+      if (m) {
+        h2.innerHTML = '<span class="card-num">' + m[0].trim() + '</span> ' + html.slice(m[0].length);
+        h2.setAttribute('data-num', '1');
+      }
+    });
+  }
+  // 按每列当前可见顺序重编号（隐藏卡片跳过，编号始终连续）
+  function renumberCards() {
+    document.querySelectorAll('.col').forEach(function (col) {
+      var i = 0;
+      col.querySelectorAll(':scope > .card').forEach(function (card) {
+        if (card.style.display === 'none') return;
+        var num = card.querySelector('h2 .card-num');
+        if (!num) return;
+        num.textContent = CARD_NUMS[i] || (i + 1);
+        i++;
+      });
+    });
+  }
+
   /* ---------------- 当前 Tab 与总刷新 ---------------- */
   function currentTab() {
     var b = document.querySelector('.tab.active');
@@ -1134,6 +1163,7 @@
     autoGrow(mo);
     if (conflicts.length) uiError('存在端口冲突：' + conflicts.join('；'));
     setGlobalErr(UI_ERRORS);
+    renumberCards();
   }
 
   /* ---------------- 事件绑定 ---------------- */
@@ -1265,6 +1295,7 @@
   // MTProxy 新版：打开时端口 / 通信密钥 默认给随机值
   if (!$id('mtpn-port').value) $id('mtpn-port').value = String(randPort());
   if (!$id('mtpn-secret').value) $id('mtpn-secret').value = genHex32();
+  initCardNums();
   syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode();
   regen();
 })();
