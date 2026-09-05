@@ -1104,7 +1104,7 @@
 
   renderCmdList('sb-cmds', SB_CMDS);
   renderMtpnCmds();
-  // MTProxy 新版：打开时端口 / 通信密钥默认给随机值
+  // MTProxy 新版：打开时端口 / 通信密钥 默认给随机值
   if (!$id('mtpn-port').value) $id('mtpn-port').value = String(randPort());
   if (!$id('mtpn-secret').value) $id('mtpn-secret').value = genHex32();
   syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode();
