@@ -140,6 +140,13 @@
       font-family: ui-monospace, Consolas, monospace; vertical-align: 1px;
     }
     .req { color: var(--err); font-weight: 700; margin-left: 4px; }
+    .warn-red { color: var(--err); font-weight: 600; }
+    .err-banner {
+      max-width: 1450px; margin: 0 auto 16px; padding: 10px 14px;
+      border: 1px solid var(--err); border-radius: 12px;
+      background: rgba(239,68,68,.08); color: var(--err);
+      font-size: 13.5px; line-height: 1.6;
+    }
 
     /* protocol grid */
     .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
@@ -220,6 +227,8 @@
     <button class="tab" data-tab="mtpnew">✈️ MTProxy 新版</button>
   </nav>
 
+  <div class="err-banner" id="err-global" style="display:none"></div>
+
   <!-- ================= Tab 1 : sb.sh ================= -->
   <section id="tab-sb" class="tabpane active">
     <div class="grid">
@@ -246,37 +255,70 @@
             <option value="vlpt">Vless-WS-TLS + Argo（vlpt）</option>
           </select>
         </div>
-        <div class="row">
+        <div class="row" id="row-argo-port" style="display:none">
           <label>Argo 协议本地端口 <span class="pill" id="argo-port-pill">vmpt</span></label>
           <input type="text" class="port-input" id="argo-port" placeholder="如 41003，或点 🎲 随机" inputmode="numeric" disabled>
         </div>
 
         <div class="sep"></div>
-        <h3>Socks5（可选，可与其他协议组合）</h3>
-        <div class="row">
-          <label>Socks5 端口 <span class="pill">socks5pt</span></label>
-          <input type="text" class="port-input" id="socks5pt" placeholder="如 31017，留空不启用" inputmode="numeric">
+        <h3>直连协议 SNI <span class="tip">填写对应端口后显示</span></h3>
+        <div class="row" id="row-hy-sni" style="display:none">
+          <label>Hysteria2 SNI <span class="pill">hy_sni</span></label>
+          <div class="ctl">
+            <input type="text" id="hy_sni" placeholder="留空默认 www.apple.com，或右侧选择">
+            <select class="sni-pick" data-target="hy_sni"><option value="">选择…</option></select>
+          </div>
         </div>
+        <div class="row" id="row-vl-sni" style="display:none">
+          <label>Vless SNI <span class="pill">vl_sni</span></label>
+          <div class="ctl">
+            <input type="text" id="vl_sni" placeholder="留空默认 www.apple.com（Vless-Reality）">
+            <select class="sni-pick" data-target="vl_sni"><option value="">选择…</option></select>
+          </div>
+        </div>
+        <div class="row" id="row-tu-sni" style="display:none">
+          <label>Tuic SNI <span class="pill">tu_sni</span></label>
+          <div class="ctl">
+            <input type="text" id="tu_sni" placeholder="留空默认 www.apple.com，或右侧选择">
+            <select class="sni-pick" data-target="tu_sni"><option value="">选择…</option></select>
+          </div>
+        </div>
+        <div class="row" id="row-any-sni" style="display:none">
+          <label>AnyTLS SNI <span class="pill">any_sni</span></label>
+          <div class="ctl">
+            <input type="text" id="any_sni" placeholder="留空默认 www.apple.com，或右侧选择">
+            <select class="sni-pick" data-target="any_sni"><option value="">选择…</option></select>
+          </div>
+        </div>
+        <p class="note"><b>SNI 安全提示：</b>不要使用 Cloudflare/Akamai 等代理或 CDN 域名作为 SNI，否则端口被扫描后会沦为无限制流量转发端口。不确定就留空（内置默认值）。</p>
+
         <p class="note">协议组合与节点数量对照表见 <a href="https://github.com/jyucoeng/singbox-tools/blob/main/README-sb.md" target="_blank">README-sb.md</a>；Argo 固定隧道需自备 CF Tunnel。</p>
       </section>
 
-      <section class="card">
-        <h2>③ Argo 隧道 / 订阅</h2>
+      <section class="card" id="argo-tunnel-card">
+        <h2>③ Argo 隧道</h2>
         <div class="row">
-          <label>Argo 固定隧道域名 <span class="pill">agn</span></label>
-          <input type="text" id="agn" placeholder="自有固定隧道域名，留空为临时隧道">
+          <label>隧道类型</label>
+          <select id="tunnel-type">
+            <option value="tmp">临时隧道（Cloudflare 自动分配随机域名）</option>
+            <option value="fixed" selected>固定隧道（自有域名 / CF Tunnel）</option>
+          </select>
         </div>
-        <div class="row">
+        <div class="row" id="row-agn">
+          <label>Argo 固定隧道域名 <span class="pill">agn</span></label>
+          <input type="text" id="agn" placeholder="如 yy.example.com 或 xx.trycloudflare.com">
+        </div>
+        <div class="row" id="row-agk">
           <label>Argo 隧道 Token <span class="pill">agk</span></label>
           <input type="text" id="agk" placeholder="ey 开头字符串或 {…} JSON，引号自动处理">
         </div>
-        <p class="note">固定隧道域名需自己输入（留空即为临时隧道）；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要填写）。</p>
+        <p class="note" id="tunnel-note">固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。</p>
         <div class="sep"></div>
         <div class="row">
           <label>CF 优选域名 <span class="pill">cdn_host</span></label>
           <div class="ctl">
             <input type="text" id="cdn_host" placeholder="留空默认 saas.sin.fan，或右侧选择">
-            <select class="pick-cdn" data-target="cdn_host"><option value="">选择…</option><option value="__tmp__">临时隧道（不填域名）</option></select>
+            <select class="pick-cdn" data-target="cdn_host"><option value="">选择…</option></select>
           </div>
         </div>
         <div class="row">
@@ -294,18 +336,8 @@
           <label>Argo 本地监听端口 <span class="pill">argo_pt</span></label>
           <input type="text" id="argo_pt" placeholder="默认 8001，一般不建议修改" inputmode="numeric">
         </div>
-        <div class="row">
-          <label>Nginx 订阅 <span class="pill">subscribe</span></label>
-          <select id="subscribe">
-            <option value="">默认 关闭（不生成订阅）</option>
-            <option value="true">开启（需填写订阅端口）</option>
-          </select>
-        </div>
-        <div class="row">
-          <label>Nginx 订阅端口 <span class="pill">nginx_pt</span></label>
-          <input type="text" id="nginx_pt" placeholder="默认 8080，不能与 argo_pt 同为 8001" inputmode="numeric" disabled>
-        </div>
-      </section>
+        <p class="note warn-red">⚠️ 该端口为 Cloudflare 中配置的 HTTP 对应的映射端口。</p>
+        </section>
       </div>
 
       <div class="col">
@@ -335,68 +367,52 @@
           <input type="text" id="out_ip" placeholder="仅出口 IP 与服务器 IP 不一致时填写">
         </div>
         <div class="row">
-          <label>Hysteria2 SNI <span class="pill">hy_sni</span></label>
-          <div class="ctl">
-            <input type="text" id="hy_sni" placeholder="留空默认 www.apple.com，或右侧选择">
-            <select class="sni-pick" data-target="hy_sni"><option value="">选择…</option></select>
-          </div>
-        </div>
-        <div class="row">
-          <label>Vless SNI <span class="pill">vl_sni</span></label>
-          <div class="ctl">
-            <input type="text" id="vl_sni" placeholder="留空默认 www.apple.com（Vless-Reality）">
-            <select class="sni-pick" data-target="vl_sni"><option value="">选择…</option></select>
-          </div>
-        </div>
-        <div class="row">
-          <label>Tuic SNI <span class="pill">tu_sni</span></label>
-          <div class="ctl">
-            <input type="text" id="tu_sni" placeholder="留空默认 www.apple.com，或右侧选择">
-            <select class="sni-pick" data-target="tu_sni"><option value="">选择…</option></select>
-          </div>
-        </div>
-        <div class="row">
-          <label>AnyTLS SNI <span class="pill">any_sni</span></label>
-          <div class="ctl">
-            <input type="text" id="any_sni" placeholder="留空默认 www.apple.com，或右侧选择">
-            <select class="sni-pick" data-target="any_sni"><option value="">选择…</option></select>
-          </div>
-        </div>
-        <div class="row">
           <label>Reality 私钥 <span class="pill">reality_private</span></label>
           <div class="ctl">
             <input type="text" id="reality_private" placeholder="留空自动生成（重装保持节点一致），或点右侧按钮">
             <button type="button" class="mini" id="gen-reality">生成</button>
           </div>
         </div>
-        <p class="note"><b>SNI 安全提示：</b>不要使用 Cloudflare/Akamai 等代理或 CDN 域名作为 SNI，否则端口被扫描后会沦为无限制流量转发端口。不确定就留空（内置默认值）。</p>
       </section>
 
       <section class="card">
-        <h2>④ Socks5 账号与 IP 白名单 <span class="tip">仅在①中填写 Socks5 端口后才启用</span></h2>
+        <h2>④ Socks5 账号与 IP 白名单 <span class="tip">启用 Socks5 后显示端口与下方账号/白名单</span></h2>
         <div class="row">
-          <label>Socks5 用户名 <span class="pill">socks5_username</span></label>
-          <input type="text" id="socks5-username" placeholder="留空自动随机生成">
-        </div>
-        <div class="row">
-          <label>Socks5 密码 <span class="pill">socks5_password</span></label>
-          <div class="ctl">
-            <input type="text" id="socks5-password" placeholder="留空随机生成，或点右侧按钮">
-            <button type="button" class="mini" id="gen-s5pass">生成</button>
-          </div>
-        </div>
-        <div class="row">
-          <label>IP 白名单开关 <span class="pill">socks5_wl_flag</span></label>
-          <select id="socks5-wl">
-            <option value="">默认 关闭（对所有 IP 开放）</option>
-            <option value="on">开启（仅白名单 IP 可连）</option>
+          <label>启用 Socks5 协议</label>
+          <select id="socks5-on">
+            <option value="">默认 不启用</option>
+            <option value="on">启用</option>
           </select>
         </div>
-        <div class="row">
-          <label>白名单 IP 列表 <span class="pill">socks5_ips</span></label>
-          <input type="text" id="socks5-ips" placeholder="1.2.3.4,5.6.7.0/24 逗号分隔，支持 CIDR" disabled>
+        <div class="row" id="row-socks5pt" style="display:none">
+          <label>Socks5 端口 <span class="pill">socks5pt</span></label>
+          <input type="text" class="port-input" id="socks5pt" placeholder="如 31017，或点 🎲 随机" inputmode="numeric">
         </div>
-        <p class="note">白名单通过 iptables 精确标记实现，卸载/覆盖安装只清理本脚本规则，不影响其他程序。</p>
+        <div id="socks5-sub" style="display:none">
+          <div class="row">
+            <label>Socks5 用户名 <span class="pill">socks5_username</span></label>
+            <input type="text" id="socks5-username" placeholder="留空自动随机生成">
+          </div>
+          <div class="row">
+            <label>Socks5 密码 <span class="pill">socks5_password</span></label>
+            <div class="ctl">
+              <input type="text" id="socks5-password" placeholder="留空随机生成，或点右侧按钮">
+              <button type="button" class="mini" id="gen-s5pass">生成</button>
+            </div>
+          </div>
+          <div class="row">
+            <label>IP 白名单开关 <span class="pill">socks5_wl_flag</span></label>
+            <select id="socks5-wl">
+              <option value="">默认 关闭（对所有 IP 开放）</option>
+              <option value="on">开启（仅白名单 IP 可连）</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>白名单 IP 列表 <span class="pill">socks5_ips</span></label>
+            <input type="text" id="socks5-ips" placeholder="1.2.3.4,5.6.7.0/24 逗号分隔，支持 CIDR" disabled>
+          </div>
+          <p class="note">白名单通过 iptables 精确标记实现，卸载/覆盖安装只清理本脚本规则，不影响其他程序。</p>
+        </div>
       </section>
 
       <section class="card">
@@ -414,6 +430,22 @@
           </select>
         </div>
         <p class="note">选择 del / list / ups 等管理动作时，将只生成不带环境变量的管理命令。</p>
+      </section>
+
+      <section class="card">
+        <h2>⑥ 节点订阅</h2>
+        <div class="row">
+          <label>节点订阅 <span class="pill">subscribe</span></label>
+          <select id="subscribe">
+            <option value="">默认 关闭（不生成订阅）</option>
+            <option value="true">开启（需填写订阅端口）</option>
+          </select>
+        </div>
+        <div class="row" id="row-nginx-pt" style="display:none">
+          <label>Nginx 订阅端口 <span class="pill">nginx_pt</span></label>
+          <input type="text" id="nginx_pt" placeholder="默认 8080，不能与 Argo 本地监听端口 同为 8001" inputmode="numeric" disabled>
+        </div>
+        <p class="note">仅用一键命令则无需开启；开启订阅后需填写 Nginx 订阅端口（默认 8080）。</p>
       </section>
       </div>
 
@@ -622,9 +654,24 @@
     return h < 24 && mi < 60 && s < 60;
   }
   // 到期时间非法时：输入框标红 + 命令框输出错误注释（以 # 开头，误复制到终端也只是注释）
+  var UI_ERRORS = [];
+  function uiError(msg) { UI_ERRORS.push(msg); }
   function expireErr(id) {
     $id(id).classList.add('err');
+    uiError('到期时间（TELEMT_EXPIRE）格式错误：应为 YYYY-MM-DD HH:MM:SS，如 2099-12-01 23:59:59');
     return '# ⚠️ 到期时间（TELEMT_EXPIRE）格式错误：应为 YYYY-MM-DD HH:MM:SS，如 2099-12-01 23:59:59';
+  }
+  // 顶部共享错误横幅（端口冲突、格式错误等），两个 Tab 共用
+  function setGlobalErr(msgs) {
+    var el = $id('err-global');
+    if (!el) return;
+    if (msgs && msgs.length) {
+      el.innerHTML = msgs.map(function (m) { return '⚠️ ' + m; }).join('<br>');
+      el.style.display = '';
+    } else {
+      el.innerHTML = '';
+      el.style.display = 'none';
+    }
   }
   function expireClear(id) {
     var e = $id(id);
@@ -888,16 +935,115 @@
   /* ---------------- 状态联动 ---------------- */
   function syncArgoPort() {
     var argo = val('argo');
-    var port = $id('argo-port');
-    port.disabled = !argo;
+    var on = !!argo;
+    var row = $id('row-argo-port');
+    var card = $id('argo-tunnel-card');
+    if (row) row.style.display = on ? '' : 'none';
+    if (card) {
+      card.style.display = on ? '' : 'none';
+      if (!on) {
+        // 未启用 Argo：恢复默认值
+        $id('argo-port').value = '';
+        $id('agn').value = '';
+        $id('agk').value = '';
+        $id('cdn_host').value = '';
+        $id('cdn_pt').value = '';
+        $id('argo_pt').value = '';
+        $id('tunnel-type').value = 'fixed';
+      }
+    }
+    $id('argo-port').disabled = !on;
     $id('argo-port-pill').textContent = argo || 'vmpt';
-    port.placeholder = argo ? ('如 41003（' + argo + ' 的本地端口）') : '先选择 Argo 协议';
+    $id('argo-port').placeholder = on ? ('如 41003（' + argo + ' 的本地端口）') : '先选择 Argo 协议';
+    syncTunnelType();
   }
   function syncNginx() {
-    $id('nginx_pt').disabled = val('subscribe') !== 'true';
+    var on = val('subscribe') === 'true';
+    $id('row-nginx-pt').style.display = on ? '' : 'none';
+    $id('nginx_pt').disabled = !on;
+    if (!on) $id('nginx_pt').value = '';
   }
   function syncWl() {
     $id('socks5-ips').disabled = val('socks5-wl') !== 'on';
+  }
+  // 端口冲突检测：仅 Singbox 页启用（mtp 页不做端口冲突检测），相同值端口同时标红发光并给出原因
+  var PORT_SB = ['hypt', 'vlrt', 'tupt', 'anypt', 'argo-port', 'socks5pt', 'argo_pt', 'nginx_pt', 'cdn_pt'];
+  var PORT_LABELS = {
+    hypt: 'Hysteria2 端口', vlrt: 'Vless-Reality 端口', tupt: 'Tuic 端口', anypt: 'AnyTLS 端口',
+    'argo-port': 'Argo 本地端口', socks5pt: 'Socks5 端口', argo_pt: 'Argo 本地监听端口',
+    nginx_pt: 'Nginx 订阅端口', cdn_pt: 'CF 对外端口'
+  };
+  function checkPortConflict() {
+    if (currentTab() !== 'sb') return [];
+    var ids = PORT_SB;
+    var groups = {};
+    var vals = {};
+    ids.forEach(function (id) {
+      var el = $id(id);
+      var v = el ? String(el.value).trim() : '';
+      vals[id] = v;
+      if (v) (groups[v] = groups[v] || []).push(id);
+    });
+    ids.forEach(function (id) {
+      var el = $id(id);
+      if (!el) return;
+      var v = vals[id];
+      var conflicted = v && groups[v] && groups[v].length > 1;
+      if (conflicted) {
+        el.classList.add('err');
+        var others = groups[v].filter(function (x) { return x !== id; })
+                             .map(function (x) { return PORT_LABELS[x] || x; }).join('、');
+        el.setAttribute('title', '端口冲突：' + (PORT_LABELS[id] || id) + ' 与 ' + others + ' 使用了同一个端口 ' + v);
+      } else {
+        el.classList.remove('err');
+        el.removeAttribute('title');
+      }
+    });
+    var msgs = [];
+    Object.keys(groups).forEach(function (v) {
+      if (groups[v].length > 1) {
+        msgs.push('端口 ' + v + ' 冲突：' + groups[v].map(function (x) { return PORT_LABELS[x] || x; }).join('、') + ' 使用了同一个端口');
+      }
+    });
+    return msgs;
+  }
+  // Socks5 账号/白名单区：由“启用 Socks5 协议”开关控制
+  function syncSocks5() {
+    // 由“启用 Socks5 协议”开关统一控制：启用则显示端口与账号/白名单，不启用则整体隐藏并清空
+    var enabled = val('socks5-on') === 'on';
+    var portRow = $id('row-socks5pt');
+    var sub = $id('socks5-sub');
+    if (portRow) portRow.style.display = enabled ? '' : 'none';
+    if (sub) sub.style.display = enabled ? '' : 'none';
+    if (!enabled) {
+      $id('socks5pt').value = '';
+      $id('socks5-username').value = '';
+      $id('socks5-password').value = '';
+      $id('socks5-wl').value = '';
+      $id('socks5-ips').value = '';
+    }
+    syncWl();
+  }
+  // 直连协议 SNI：仅当对应端口填了值才显示；端口清空时同步清空对应 SNI
+  function syncSniByPort() {
+    var pairs = [['hypt', 'row-hy-sni', 'hy_sni'], ['vlrt', 'row-vl-sni', 'vl_sni'], ['tupt', 'row-tu-sni', 'tu_sni'], ['anypt', 'row-any-sni', 'any_sni']];
+    pairs.forEach(function (p) {
+      var on = !!val(p[0]);
+      $id(p[1]).style.display = on ? '' : 'none';
+      if (!on) $id(p[2]).value = '';
+    });
+  }
+  function syncTunnelType() {
+    var fixed = val('tunnel-type') === 'fixed';
+    $id('row-agn').style.display = fixed ? '' : 'none';
+    $id('row-agk').style.display = fixed ? '' : 'none';
+    $id('agn').disabled = !fixed;
+    $id('agk').disabled = !fixed;
+    if (!fixed) { $id('agn').value = ''; $id('agk').value = ''; }
+    var n = $id('tunnel-note');
+    if (n) n.innerHTML = fixed
+      ? '固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。'
+      : '临时隧道：Cloudflare 自动分配随机域名（如 xxx.trycloudflare.com），无需配置域名/Token，服务重启域名会变，适合临时测试。<br><span class="warn-red">⚠️ 临时隧道在 VPS 重启后，订阅地址和 Argo 节点会发生改变。</span>';
   }
   function syncMtpnMode() {
     var mode = val('mtpn-mode');
@@ -974,11 +1120,20 @@
     el.style.height = el.scrollHeight + 'px';
   }
   function regen() {
+    UI_ERRORS = [];
     syncMgFields();
-    $id('cmd').value = currentTab() === 'sb' ? buildSb() : buildMtpNew();
+    syncSniByPort();
+    syncSocks5();
+    var conflicts = checkPortConflict();
+    syncTunnelType();
+    var warn = '';
+    if (conflicts.length) warn = conflicts.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
+    $id('cmd').value = warn + (currentTab() === 'sb' ? buildSb() : buildMtpNew());
     var mo = $id('mg-out');
-    mo.value = buildMg();
+    mo.value = warn + buildMg();
     autoGrow(mo);
+    if (conflicts.length) uiError('存在端口冲突：' + conflicts.join('；'));
+    setGlobalErr(UI_ERRORS);
   }
 
   /* ---------------- 事件绑定 ---------------- */
@@ -991,6 +1146,9 @@
       });
       $id('out-script').textContent = SCRIPT_NAMES[t];
       regen();
+      // 切换 Tab 时暂时清空共享错误横幅，交互后重新计算
+      UI_ERRORS = [];
+      setGlobalErr([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
@@ -1086,8 +1244,8 @@
     });
   });
 
-  // CF 优选域名候选（cdn_host 默认 saas.sin.fan；选“临时隧道”即清空）
-  var CDN_LIST = ['cdns.doon.eu.org', 'cf.090227.xyz', 'cf.877774.xyz', 'cf.008500.xyz', 'www.shopify.com', 'mfa.gov.ua', 'cf.zhetengsha.eu.org', 'store.ubi.com', 'sub.danfeng.eu.org', 'cf.877771.xyz', 'cf.130519.xyz', 'cf.tencentapp.cn', 'cf.cloudflare.182682.xyz', 'bestcf.030101.xyz', 'cdn.2020111.xyz', 'cf.0sm.com', 'cf.900501.xyz', 'cfip.1323123.xyz', 'cfip.cfcdn.vip', 'cfip.xxxxxxxx.tk', 'cloudflare.182682.xyz', 'cloudflare-dl.byoip.top', 'cloudflare-ip.mofashi.ltd', 'fn.130519.xyz', 'freeyx.cloudflare88.eu.org'];
+  // CF 优选域名候选（前两项为推荐值；cdn_host 留空时脚本默认 saas.sin.fan）
+  var CDN_LIST = ['saas.sin.fan', 'cdn.dada.nyc.mn', 'cdns.doon.eu.org', 'cf.090227.xyz', 'cf.877774.xyz', 'cf.008500.xyz', 'www.shopify.com', 'mfa.gov.ua', 'cf.zhetengsha.eu.org', 'store.ubi.com', 'sub.danfeng.eu.org', 'cf.877771.xyz', 'cf.130519.xyz', 'cf.tencentapp.cn', 'cf.cloudflare.182682.xyz', 'bestcf.030101.xyz', 'cdn.2020111.xyz', 'cf.0sm.com', 'cf.900501.xyz', 'cfip.1323123.xyz', 'cfip.cfcdn.vip', 'cfip.xxxxxxxx.tk', 'cloudflare.182682.xyz', 'cloudflare-dl.byoip.top', 'cloudflare-ip.mofashi.ltd', 'fn.130519.xyz', 'freeyx.cloudflare88.eu.org'];
   var cdnSel = document.querySelector('select.pick-cdn[data-target="cdn_host"]');
   CDN_LIST.forEach(function (d) {
     var o = document.createElement('option');
@@ -1097,7 +1255,7 @@
   });
   cdnSel.addEventListener('change', function () {
     if (!cdnSel.value) return;
-    $id('cdn_host').value = cdnSel.value === '__tmp__' ? '' : cdnSel.value;
+    $id('cdn_host').value = cdnSel.value;
     cdnSel.selectedIndex = 0;
     regen();
   });
