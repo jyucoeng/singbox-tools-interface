@@ -957,6 +957,7 @@
     $id('argo-port-pill').textContent = argo || 'vmpt';
     $id('argo-port').placeholder = on ? ('如 41003（' + argo + ' 的本地端口）') : '先选择 Argo 协议';
     syncTunnelType();
+    renumberCards();
   }
   function syncNginx() {
     var on = val('subscribe') === 'true';
@@ -1124,17 +1125,16 @@
       }
     });
   }
-  // 按每列当前可见顺序重编号（隐藏卡片跳过，编号始终连续）
+  // 按当前激活 Tab 内所有可见卡片的 DOM 顺序全局唯一编号（隐藏跳过，编号始终连续、不跨列重复）
   function renumberCards() {
-    document.querySelectorAll('.col').forEach(function (col) {
-      var i = 0;
-      col.querySelectorAll(':scope > .card').forEach(function (card) {
-        if (card.style.display === 'none') return;
-        var num = card.querySelector('h2 .card-num');
-        if (!num) return;
-        num.textContent = CARD_NUMS[i] || (i + 1);
-        i++;
-      });
+    var pane = document.querySelector('.tabpane.active');
+    if (!pane) return;
+    var i = 0;
+    pane.querySelectorAll('.card h2 .card-num').forEach(function (num) {
+      var card = num.closest('.card');
+      if (!card || card.style.display === 'none') return;
+      num.textContent = CARD_NUMS[i] || (i + 1);
+      i++;
     });
   }
 
