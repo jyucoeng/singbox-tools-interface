@@ -2,6 +2,8 @@
 
 为 [jyucoeng/singbox-tools](https://github.com/jyucoeng/singbox-tools) 制作的一键 SSH 命令生成快捷界面（界面风格借鉴 [yonggekkk/argosbx](https://yonggekkk.github.io/argosbx/) 命令生成器），页头提供 [pkg.tbbbk.com](https://pkg.tbbbk.com/)（Linux 应用安装器）查询链接。
 
+**在线体验：<https://singbox.dingdang.de5.net/>**
+
 一个项目，三种部署：**Cloudflare Pages（推荐）**、**Cloudflare Workers**、**GitHub Pages** 任选，界面完全一致。
 
 ## 功能
