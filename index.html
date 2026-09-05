@@ -251,7 +251,7 @@
         <div class="row">
           <label>CF 优选域名 <span class="pill">cdn_host</span></label>
           <div class="ctl">
-            <input type="text" id="cdn_host" placeholder="默认 saas.sin.fan，或右侧选择">
+            <input type="text" id="cdn_host" placeholder="留空默认 saas.sin.fan，或右侧选择">
             <select class="pick-cdn" data-target="cdn_host"><option value="">选择…</option><option value="__tmp__">临时隧道（不填域名）</option></select>
           </div>
         </div>
@@ -409,9 +409,9 @@
         <div class="row">
           <label>安装模式 <span class="pill">INSTALL_MODE</span></label>
           <select id="mtpn-mode">
-            <option value="menu">交互式菜单（推荐，参数较多）</option>
-            <option value="go">Go 版 mtg（轻量）</option>
+            <option value="go" selected>Go 版 mtg（轻量，默认）</option>
             <option value="telemt">Telemt 高性能版（多用户/配额/限速）</option>
+            <option value="menu">交互式菜单（无参数运行，忽略右侧参数）</option>
           </select>
         </div>
         <div class="row">
@@ -964,7 +964,6 @@
     cdnSel.selectedIndex = 0;
     regen();
   });
-  if (!$id('cdn_host').value) $id('cdn_host').value = 'saas.sin.fan';
 
   renderCmdList('sb-cmds', SB_CMDS);
   renderCmdList('mtpn-cmds', MTPN_CMDS);
