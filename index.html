@@ -334,7 +334,7 @@
           </select>
         </div>
         <div class="row">
-          <label>Argo 本地监听端口 <span class="pill">argo_pt</span></label>
+          <label>Argo隧道Tunnel 映射端口 <span class="pill">argo_pt</span></label>
           <input type="text" id="argo_pt" placeholder="默认 8001，一般不建议修改" inputmode="numeric">
         </div>
         <p class="note warn-org">⚠️ 该端口为 Cloudflare 中配置隧道的 HTTP 对应的映射端口,比如127.0.0.1:8001。</p>
@@ -444,7 +444,7 @@
         </div>
         <div class="row" id="row-nginx-pt" style="display:none">
           <label>Nginx 订阅端口 <span class="pill">nginx_pt</span></label>
-          <input type="text" id="nginx_pt" placeholder="默认 8080，不能与 Argo 本地监听端口 同为 8001" inputmode="numeric" disabled>
+          <input type="text" id="nginx_pt" placeholder="默认 8080，不能与 Argo隧道Tunnel 映射端口 同为 8001" inputmode="numeric" disabled>
         </div>
         <p class="note">开启订阅后需填写 Nginx 订阅端口（默认 8080）。</p>
       </section>
@@ -980,7 +980,7 @@
   var PORT_SB = ['hypt', 'vlrt', 'tupt', 'anypt', 'argo-port', 'socks5pt', 'argo_pt', 'nginx_pt', 'cdn_pt'];
   var PORT_LABELS = {
     hypt: 'Hysteria2 端口', vlrt: 'Vless-Reality 端口', tupt: 'Tuic 端口', anypt: 'AnyTLS 端口',
-    'argo-port': 'Argo 本地端口', socks5pt: 'Socks5 端口', argo_pt: 'Argo 本地监听端口',
+    'argo-port': 'Argo 本地端口', socks5pt: 'Socks5 端口', argo_pt: 'Argo隧道Tunnel 映射端口',
     nginx_pt: 'Nginx 订阅端口', cdn_pt: 'CF 对外端口'
   };
   function checkPortConflict() {
