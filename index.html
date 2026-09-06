@@ -251,15 +251,12 @@
           <label>Argo 协议选择 <span class="pill">argo</span></label>
           <select id="argo">
             <option value="">不启用 Argo</option>
-            <option value="vmpt">VMess-WS-TLS + Argo（vmpt）</option>
-            <option value="trpt">Trojan-WS-TLS + Argo（trpt）</option>
-            <option value="vlpt">Vless-WS-TLS + Argo（vlpt）</option>
+            <option value="vmess">Vmess-Argo</option>
+            <option value="trojan">Trojan-Argo</option>
+            <option value="vless">Vless-Argo</option>
           </select>
         </div>
-        <div class="row" id="row-argo-port" style="display:none">
-          <label><span id="argo-port-label">Argo 协议本地端口</span> <span class="pill" id="argo-port-pill">vmpt</span></label>
-          <input type="text" class="port-input" id="argo-port" placeholder="如 41003，或点 🎲 随机" inputmode="numeric" disabled>
-        </div>
+        <div class="tip">Argo 协议本地回源端口由脚本自动随机，无需填写。</div>
 
         <div class="sep"></div>
         <h3>直连协议 SNI <span class="tip">填写对应端口后显示</span></h3>
@@ -853,10 +850,9 @@
     strEnv('any_sni', 'any_sni', envs);
     // 直连协议端口
     ['hypt', 'vlrt', 'tupt', 'anypt'].forEach(function (k) { numEnv(k, k, envs); });
-    // Argo 三选一
+    // Argo 三选一（vmess/trojan/vless，本地端口由脚本自动随机，无对应端口变量）
     var argo = val('argo');
     if (argo) {
-      numEnv(argo, 'argo-port', envs);
       envs.push(['argo', "'" + argo + "'"]);
     }
     // Socks5
@@ -937,18 +933,14 @@
   function strEnv2(k, id, envs) { var v = val(id); if (v) envs.push([k, qv(v)]); }
 
   /* ---------------- 状态联动 ---------------- */
-  var ARGO_NAMES = { vmpt: 'Vmess', trpt: 'Trojan', vlpt: 'Vless' };
   function syncArgoPort() {
     var argo = val('argo');
     var on = !!argo;
-    var row = $id('row-argo-port');
     var card = $id('argo-tunnel-card');
-    if (row) row.style.display = on ? '' : 'none';
     if (card) {
       card.style.display = on ? '' : 'none';
       if (!on) {
         // 未启用 Argo：恢复默认值
-        $id('argo-port').value = '';
         $id('agn').value = '';
         $id('agk').value = '';
         $id('cdn_host').value = '';
@@ -957,13 +949,6 @@
         $id('tunnel-type').value = 'fixed';
       }
     }
-    $id('argo-port').disabled = !on;
-    $id('argo-port-pill').textContent = argo || 'vmpt';
-    var argoPortLabel = $id('argo-port-label');
-    if (argoPortLabel) {
-      argoPortLabel.textContent = on ? (ARGO_NAMES[argo] || argo) + '-Argo 协议端口' : 'Argo 协议本地端口';
-    }
-    $id('argo-port').placeholder = on ? ('如 41003（' + argo + ' 的本地端口）') : '先选择 Argo 协议';
     syncTunnelType();
     renumberCards();
   }
@@ -977,10 +962,10 @@
     $id('socks5-ips').disabled = val('socks5-wl') !== 'on';
   }
   // 端口冲突检测：仅 Singbox 页启用（mtp 页不做端口冲突检测），相同值端口同时标红发光并给出原因
-  var PORT_SB = ['hypt', 'vlrt', 'tupt', 'anypt', 'argo-port', 'socks5pt', 'argo_pt', 'nginx_pt', 'cdn_pt'];
+  var PORT_SB = ['hypt', 'vlrt', 'tupt', 'anypt', 'socks5pt', 'argo_pt', 'nginx_pt', 'cdn_pt'];
   var PORT_LABELS = {
     hypt: 'Hysteria2 端口', vlrt: 'Vless-Reality 端口', tupt: 'Tuic 端口', anypt: 'AnyTLS 端口',
-    'argo-port': 'Argo 本地端口', socks5pt: 'Socks5 端口', argo_pt: 'Argo隧道Tunnel 映射端口',
+    socks5pt: 'Socks5 端口', argo_pt: 'Argo隧道Tunnel 映射端口',
     nginx_pt: 'Nginx 订阅端口', cdn_pt: 'CF 对外端口'
   };
   function checkPortConflict() {
@@ -1273,11 +1258,6 @@
     btn.title = '填入随机端口（10000-65535）';
     btn.addEventListener('click', function () {
       if (inp.disabled) inp.disabled = false;
-      if (inp.id === 'argo-port' && !val('argo')) {
-        var sel = $id('argo');
-        sel.value = 'vmpt';
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      }
       inp.value = randPort();
       regen();
     });
