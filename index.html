@@ -1322,8 +1322,12 @@
     mtpnDomainSel.appendChild(o);
   });
   mtpnDomainSel.addEventListener('change', function () {
-    if (!mtpnDomainSel.value) return;
-    $id('mtpn-domain').value = mtpnDomainSel.value;
+    if (!mtpnDomainSel.value) {
+      // 选中「请选择」时清空输入框
+      $id('mtpn-domain').value = '';
+    } else {
+      $id('mtpn-domain').value = mtpnDomainSel.value;
+    }
     mtpnDomainSel.selectedIndex = 0;
     regen();
   });
