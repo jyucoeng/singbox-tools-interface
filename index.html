@@ -235,7 +235,7 @@
     <div class="grid">
       <div class="col">
       <section class="card">
-        <h2>① 协议与端口 <span class="tip">填写端口即启用该协议，留空则不启用</span></h2>
+        <h2>① 直连协议与端口 <span class="tip">填写端口即启用该协议，留空则不启用</span></h2>
 
         <h3>直连协议（可自由组合）</h3>
         <div class="pgrid">
@@ -244,19 +244,6 @@
           <div class="pitem"><label>Tuic <span class="pill">tupt</span></label><input type="text" class="port-input" id="tupt" placeholder="如 2082，或点 🎲 随机" inputmode="numeric"></div>
           <div class="pitem"><label>AnyTLS <span class="pill">anypt</span></label><input type="text" class="port-input" id="anypt" placeholder="如 2082，或点 🎲 随机" inputmode="numeric"></div>
         </div>
-
-        <div class="sep"></div>
-        <h3>Argo CDN 协议（三选一：VMess-WS-TLS / Trojan-WS-TLS / Vless-WS-TLS）</h3>
-        <div class="row">
-          <label>Argo 协议选择 <span class="pill">argo</span></label>
-          <select id="argo">
-            <option value="">不启用 Argo</option>
-            <option value="vmess">Vmess-Argo</option>
-            <option value="trojan">Trojan-Argo</option>
-            <option value="vless">Vless-Argo</option>
-          </select>
-        </div>
-        <div class="tip">Argo 协议本地回源端口由脚本自动随机，无需填写。</div>
 
         <div class="sep"></div>
         <h3>直连协议 SNI <span class="tip">填写对应端口后显示</span></h3>
@@ -289,55 +276,187 @@
           </div>
         </div>
         <p class="note"><b>SNI 安全提示：</b>不要使用 Cloudflare/Akamai 等代理或 CDN 域名作为 SNI，否则端口被扫描后会沦为无限制流量转发端口。不确定就留空（内置默认值）。</p>
-
-        <p class="note">协议组合与节点数量对照表见 <a href="https://github.com/jyucoeng/singbox-tools/blob/main/README-sb.md" target="_blank">README-sb.md</a>；Argo 固定隧道需自备 CF Tunnel。</p>
       </section>
 
       <section class="card" id="argo-tunnel-card">
-        <h2>③ Argo 隧道</h2>
-        <div class="row">
-          <label>隧道类型</label>
-          <select id="tunnel-type">
-            <option value="tmp">临时隧道（Cloudflare 自动分配随机域名）</option>
-            <option value="fixed" selected>固定隧道（自有域名 / CF Tunnel）</option>
-          </select>
-        </div>
-        <div class="row" id="row-agn">
-          <label>Argo 固定隧道域名 <span class="pill">agn</span></label>
-          <input type="text" id="agn" placeholder="如 yy.example.com 或 xx.trycloudflare.com">
-        </div>
-        <div class="row" id="row-agk">
-          <label>Argo 隧道 Token <span class="pill">agk</span></label>
-          <input type="text" id="agk" placeholder="ey 开头字符串或 {…} JSON，引号自动处理">
-        </div>
-        <p class="note" id="tunnel-note">固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。</p>
-        <div class="sep"></div>
-        <div class="row">
-          <label>CF 优选域名 <span class="pill">cdn_host</span></label>
-          <div class="ctl">
-            <input type="text" id="cdn_host" placeholder="留空默认 saas.sin.fan，或右侧选择">
-            <select class="pick-cdn" data-target="cdn_host"><option value="">选择…</option></select>
+<h2>② Argo 隧道协议与配置（VMess/Trojan/Vless Argo 可多选）</h2>
+          <div class="row">
+            <label>启用 Argo <span class="pill">argo</span></label>
+            <select id="argo-on">
+              <option value="">不启用</option>
+              <option value="on">启用</option>
+            </select>
           </div>
+          <div class="tip">Argo 本地回源端口由脚本自动随机，无需填写；选中协议后展开下方隧道配置。</div>
+        <div id="argo-tunnel-params" style="display:none">
+          <h3 style="color:var(--ink)"><b>选择走 Argo Tunnel 隧道的协议（</b><span class="pill">argo</span><b> 参数组）</b></h3>
+          <div class="row"><label class="ck"><input type="checkbox" id="argo-vmess"> <b>Vmess-Argo</b></label></div>
+          <div class="row"><label class="ck"><input type="checkbox" id="argo-vless"> <b>Vless-Argo</b></label></div>
+          <div class="row"><label class="ck"><input type="checkbox" id="argo-trojan"> <b>Trojan-Argo</b></label></div>
+
+          <div class="row" id="row-argo-mode" style="display:none">
+            <label>CF 优选域名/优选端口 设置方式</label>
+            <select id="argo-mode">
+              <option value="shared">统一设置（所有协议共用一个）</option>
+              <option value="separate">分开设置（各协议单独）</option>
+            </select>
+          </div>
+
+          <div id="argo-shared" style="display:none">
+            <h3 style="color:var(--ink)"><b>统一设置：共享参数</b></h3>
+            <div class="row">
+              <label>CF 优选域名 <span class="pill">argo_cf_host</span></label>
+              <div class="ctl">
+                <input type="text" id="argo_cf_host" placeholder="留空默认 saas.sin.fan，或右侧选择">
+                <select class="pick-cdn" data-target="argo_cf_host"><option value="">选择…</option></select>
+              </div>
+            </div>
+            <div class="row">
+              <label>CF 优选端口 <span class="pill">argo_cf_pt</span></label>
+              <select id="argo_cf_pt">
+                <option value="">默认 443</option>
+                <option value="2053">2053</option>
+                <option value="2083">2083</option>
+                <option value="2087">2087</option>
+                <option value="2096">2096</option>
+                <option value="8443">8443</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="argo-separate" style="display:none">
+            <h3 style="color:var(--ink)"><b>分开设置：各协议专属参数</b></h3>
+            <p class="note">📌 勾选哪个协议，就展开该协议的专属 CF 优选域名 / 专属端口。</p>
+            <div id="argo-vmess-fields" style="display:none">
+              <h3 style="color:var(--ink)">· Vmess-Argo</h3>
+              <div class="row"><label>专属 CF 优选域名</label>
+                <div class="ctl"><input type="text" id="argo_vmess_cf_host" placeholder="如 saas.sin.fan 或优选IP">
+                  <select class="pick-cdn" data-target="argo_vmess_cf_host"><option value="">选择…</option></select></div></div>
+              <div class="row"><label>CF 优选专属端口 <span class="pill">argo_vmess_cf_pt</span></label>
+                <select id="argo_vmess_cf_pt"><option value="">默认 443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option><option value="2096">2096</option><option value="8443">8443</option></select></div>
+            </div>
+            <div id="argo-vless-fields" style="display:none">
+              <h3 style="color:var(--ink)">· Vless-Argo</h3>
+              <div class="row"><label>专属 CF 优选域名</label>
+                <div class="ctl"><input type="text" id="argo_vless_cf_host" placeholder="如 saas.sin.fan 或优选IP">
+                  <select class="pick-cdn" data-target="argo_vless_cf_host"><option value="">选择…</option></select></div></div>
+              <div class="row"><label>CF 优选专属端口 <span class="pill">argo_vless_cf_pt</span></label>
+                <select id="argo_vless_cf_pt"><option value="">默认 443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option><option value="2096">2096</option><option value="8443">8443</option></select></div>
+            </div>
+            <div id="argo-trojan-fields" style="display:none">
+              <h3 style="color:var(--ink)">· Trojan-Argo</h3>
+              <div class="row"><label>专属 CF 优选域名</label>
+                <div class="ctl"><input type="text" id="argo_trojan_cf_host" placeholder="如 saas.sin.fan 或优选IP">
+                  <select class="pick-cdn" data-target="argo_trojan_cf_host"><option value="">选择…</option></select></div></div>
+              <div class="row"><label>CF 优选专属端口 <span class="pill">argo_trojan_cf_pt</span></label>
+                <select id="argo_trojan_cf_pt"><option value="">默认 443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option><option value="2096">2096</option><option value="8443">8443</option></select></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>隧道类型</label>
+            <select id="tunnel-type">
+              <option value="tmp">临时隧道（Cloudflare 自动分配随机域名）</option>
+              <option value="fixed" selected>固定隧道（自有域名 / CF Tunnel）</option>
+            </select>
+          </div>
+          <div class="row" id="row-agn">
+            <label>Argo 固定隧道域名 <span class="pill">agn</span></label>
+            <input type="text" id="agn" placeholder="如 yy.example.com">
+          </div>
+          <div class="row" id="row-agk">
+            <label>Argo 隧道 Token <span class="pill">agk</span></label>
+            <input type="text" id="agk" placeholder="ey 开头字符串或 {…} JSON，引号自动处理">
+          </div>
+          <p class="note" id="tunnel-note">固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。</p>
+          <div class="row">
+            <label>Argo隧道Tunnel 映射端口 <span class="pill">argo_pt</span></label>
+            <input type="text" id="argo_pt" placeholder="默认 8001，一般不建议修改" inputmode="numeric">
+          </div>
+          <p class="note warn-org">⚠️ 该端口为 Cloudflare 中配置隧道的 HTTP 对应的映射端口,比如127.0.0.1:8001。</p>
         </div>
-        <div class="row">
-          <label>CF 对外端口 <span class="pill">cdn_pt</span></label>
-          <select id="cdn_pt">
-            <option value="">默认 443</option>
-            <option value="2053">2053</option>
-            <option value="2083">2083</option>
-            <option value="2087">2087</option>
-            <option value="2096">2096</option>
-            <option value="8443">8443</option>
-          </select>
-        </div>
-        <div class="row">
-          <label>Argo隧道Tunnel 映射端口 <span class="pill">argo_pt</span></label>
-          <input type="text" id="argo_pt" placeholder="默认 8001，一般不建议修改" inputmode="numeric">
-        </div>
-        <p class="note warn-org">⚠️ 该端口为 Cloudflare 中配置隧道的 HTTP 对应的映射端口,比如127.0.0.1:8001。</p>
+        </section>
+
+        <!-- WS-CDN 回源：独立卡片（经 CDN 反代到 nginx，可与 Argo 并存，可多选） -->
+        <section class="card" id="ws-cdn-card">
+          <h2>③ WS-CDN 回源（可选，经 CDN 反代到 nginx，可与 Argo 并存，可多选）</h2>
+          <div class="row">
+            <label>启用 WS-CDN <span class="pill">ws_cdn</span></label>
+            <select id="ws-cdn-on">
+              <option value="">不启用</option>
+              <option value="on">启用</option>
+            </select>
+          </div>
+          <div id="ws-cdn-params" style="display:none">
+            <h3 style="color:var(--ink)"><b>选择走 WS-CDN 回源的协议（</b><span class="pill">ws_cdn</span><b> 参数组）</b></h3>
+
+            <div class="ws-cdn-proto">
+              <div class="row"><label class="ck"><input type="checkbox" id="ws-cdn-vmess"> <b>Vmess-WS-CDN</b></label></div>
+              <div class="row"><label class="ck"><input type="checkbox" id="ws-cdn-vless"> <b>Vless-WS-CDN</b></label></div>
+              <div class="row"><label class="ck"><input type="checkbox" id="ws-cdn-trojan"> <b>Trojan-WS-CDN</b></label></div>
+            </div>
+
+            <p class="note">📌 <b>「专属 CF 优选域名」是各协议单独的连接地址（add，可填优选 IP 或优选域名）</b>；「专属回源域名」是该协议的真实域名（Host 头 + SNI）。<b>填了共享 CF 优选域名，就代表多个 CDN 协议共用同一个连接地址</b>。</p>
+
+            <div class="row" id="row-ws-cdn-mode" style="display:none">
+              <label>优选域名/子域名/优选端口 设置方式</label>
+              <select id="ws-cdn-mode">
+                <option value="shared">统一设置（所有协议共用一个）</option>
+                <option value="separate">分开设置（各协议单独）</option>
+              </select>
+            </div>
+
+            <div id="ws-cdn-separate" style="display:none">
+              <h3 style="color:var(--ink)"><b>分开设置：各协议专属参数</b></h3>
+              <p class="note">📌 勾选哪个协议，就展开该协议的专属 CF 优选域名 / 专属回源域名 / 专属端口。</p>
+<div id="ws-cdn-vmess-fields" style="display:none">
+                  <h3 style="color:var(--ink)">· Vmess-WS-CDN</h3>
+                  <div class="row"><label>专属 CF 优选域名</label>
+                    <div class="ctl"><input type="text" id="ws_cdn_vmess_cf_host" placeholder="如 saas.sin.fan 或优选IP">
+                      <select class="pick-cdn" data-target="ws_cdn_vmess_cf_host"><option value="">选择…</option></select></div></div>
+                  <div class="row"><label>专属回源域名 <span class="pill">ws_cdn_vmess_sni</span></label>
+                    <input type="text" id="ws_cdn_vmess_sni" placeholder="真实域名(Host/SNI)"></div>
+                  <div class="row"><label>CF 优选专属端口 <span class="pill">ws_cdn_vmess_cf_pt</span></label>
+                    <select id="ws_cdn_vmess_cf_pt"><option value="">默认 443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option><option value="2096">2096</option><option value="8443">8443</option></select></div>
+                </div>
+<div id="ws-cdn-vless-fields" style="display:none">
+                  <h3 style="color:var(--ink)">· Vless-WS-CDN</h3>
+                  <div class="row"><label>专属 CF 优选域名</label>
+                    <div class="ctl"><input type="text" id="ws_cdn_vless_cf_host" placeholder="如 saas.sin.fan 或优选IP">
+                      <select class="pick-cdn" data-target="ws_cdn_vless_cf_host"><option value="">选择…</option></select></div></div>
+                  <div class="row"><label>专属回源域名 <span class="pill">ws_cdn_vless_sni</span></label>
+                    <input type="text" id="ws_cdn_vless_sni" placeholder="真实域名(Host/SNI)"></div>
+                  <div class="row"><label>CF 优选专属端口 <span class="pill">ws_cdn_vless_cf_pt</span></label>
+                    <select id="ws_cdn_vless_cf_pt"><option value="">默认 443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option><option value="2096">2096</option><option value="8443">8443</option></select></div>
+                </div>
+<div id="ws-cdn-trojan-fields" style="display:none">
+                  <h3 style="color:var(--ink)">· Trojan-WS-CDN</h3>
+                  <div class="row"><label>专属 CF 优选域名</label>
+                    <div class="ctl"><input type="text" id="ws_cdn_trojan_cf_host" placeholder="如 saas.sin.fan 或优选IP">
+                      <select class="pick-cdn" data-target="ws_cdn_trojan_cf_host"><option value="">选择…</option></select></div></div>
+                  <div class="row"><label>专属回源域名 <span class="pill">ws_cdn_trojan_sni</span></label>
+                    <input type="text" id="ws_cdn_trojan_sni" placeholder="真实域名(Host/SNI)"></div>
+                  <div class="row"><label>CF 优选专属端口 <span class="pill">ws_cdn_trojan_cf_pt</span></label>
+                    <select id="ws_cdn_trojan_cf_pt"><option value="">默认 443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option><option value="2096">2096</option><option value="8443">8443</option></select></div>
+                </div>
+            </div>
+
+            <div id="ws-cdn-shared" style="display:none">
+              <h3 style="color:var(--ink)"><b>统一设置：共享参数</b></h3>
+              <div class="row"><label>共享 CF 优选域名 <span class="pill">ws_cdn_cf_host</span></label>
+                <div class="ctl"><input type="text" id="ws_cdn_cf_host" placeholder="如 saas.sin.fan 或优选IP（各协议连接地址兜底）">
+                  <select class="pick-cdn" data-target="ws_cdn_cf_host"><option value="">选择…</option></select></div></div>
+              <div class="row"><label>共享回源域名 <span class="pill">ws_cdn_sni</span></label>
+                <input type="text" id="ws_cdn_sni" placeholder="真实域名(Host/SNI)。如 cdn.example.com"></div>
+              <div class="row"><label>共享 CF 优选端口 <span class="pill">ws_cdn_cf_pt</span></label>
+                <select id="ws_cdn_cf_pt"><option value="">默认 443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option><option value="2096">2096</option><option value="8443">8443</option></select></div>
+              <p class="note">📌 「共享 CF 优选域名 / 回源域名 / 优选端口」是所有已选协议共用的兜底参数；共享<code>ws_cdn_cf_host</code>是各协议连接地址兜底，<code>ws_cdn_sni</code>（回源域名）才是订阅地址用的 https 域名。CDN 端口仅限 HTTPS 系：443 / 2053 / 2083 / 2087 / 2096 / 8443。</p>
+            </div>
+
+            <p class="note warn-org">🔙 CDN 回源端口 = 服务器 nginx_pt（默认 8080）；可与 Argo 并存。订阅地址有固定 Argo 用固定 Argo，否则用共享回源域名 ws_cdn_sni。</p>
+          </div>
         </section>
       </div>
-
       <div class="col">
       <section class="card">
         <h2>② 全局配置</h2>
@@ -444,6 +563,9 @@
           <input type="text" id="nginx_pt" placeholder="默认 8080，不能与 Argo隧道Tunnel 映射端口 同为 8001" inputmode="numeric" disabled>
         </div>
         <p class="note">开启订阅后需填写 Nginx 订阅端口（默认 8080）。</p>
+        <p class="note warn-org">🔙 WS-CDN 回源时：CDN 回源端口 = 服务器 nginx_pt（默认 8080），请在 Cloudflare 后台把 origin rule 重定向该端口（或 origin rule 泛域名回源）。</p>
+        <p class="note">📌 订阅地址 URL = <code>https://域名/sub/UUID</code>，域名自动按以下顺序取：<br>
+<b>有固定 Argo（隧道存活）就直接用固定 Argo</b> → 否则用「共享回源域名 ws_cdn_sni」→ 否则用「专属回源域名 ws_cdn_vmess_sni / ws_cdn_vless_sni / ws_cdn_trojan_sni（取第一个非空）」→ 否则用「临时 Argo」→ 最后才是 <code>http://IP:nginx_pt</code>（明文）。</p>
       </section>
       </div>
 
@@ -636,6 +758,10 @@
   'use strict';
   var $id = function (x) { return document.getElementById(x); };
   var val = function (x) { var e = $id(x); return e ? String(e.value).trim() : ''; };
+  // checkbox 状态必须用 checked 判断（val() 读的是 .value，checkbox 恒为 "on"，不反映勾选状态）
+  var isChecked = function (x) { var e = $id(x); return !!e && e.checked; };
+  // WS-CDN 是否启用：与 sb00.sh 的 "ws_cdn=<协议列表>" 对齐——勾选了任一协议即视为启用，无独立主开关
+  var wsCdnAny = function () { return isChecked('ws-cdn-vmess') || isChecked('ws-cdn-vless') || isChecked('ws-cdn-trojan'); };
 
   var BASE = 'https://raw.githubusercontent.com/jyucoeng/singbox-tools/refs/heads/main/';
   var URLS = {
@@ -850,10 +976,44 @@
     strEnv('any_sni', 'any_sni', envs);
     // 直连协议端口
     ['hypt', 'vlrt', 'tupt', 'anypt'].forEach(function (k) { numEnv(k, k, envs); });
-    // Argo 三选一（vmess/trojan/vless，本地端口由脚本自动随机，无对应端口变量）
-    var argo = val('argo');
-    if (argo) {
-      envs.push(['argo', "'" + argo + "'"]);
+    // Argo 多选（勾选协议即启用；任一生效才写 argo 列表）
+    if (val('argo-on') === 'on') {
+      var argoArr = [];
+      if (isChecked('argo-vmess')) argoArr.push('vmess');
+      if (isChecked('argo-vless')) argoArr.push('vless');
+      if (isChecked('argo-trojan')) argoArr.push('trojan');
+      if (argoArr.length) {
+        envs.push(['argo', "'" + argoArr.join(',') + "'"]);
+        if (val('argo-mode') === 'separate') {
+          ['vmess', 'vless', 'trojan'].forEach(function (p) {
+            strEnv('argo_' + p + '_cf_host', 'argo_' + p + '_cf_host', envs);
+            numEnv('argo_' + p + '_cf_pt', 'argo_' + p + '_cf_pt', envs);
+          });
+        }
+      }
+    }
+    // WS-CDN 回源（经 CDN 反代到 nginx，可与 Argo 并存；勾选协议才生成对应 ws_cdn）
+    if (val('ws-cdn-on') === 'on') {
+      var wsArr = [];
+      if (isChecked('ws-cdn-vmess')) wsArr.push('vmess');
+      if (isChecked('ws-cdn-vless')) wsArr.push('vless');
+      if (isChecked('ws-cdn-trojan')) wsArr.push('trojan');
+      if (wsArr.length) {
+        envs.push(['ws_cdn', "'" + wsArr.join(',') + "'"]);
+        if (val('ws-cdn-mode') === 'separate') {
+          // 分开设置：只写各协议专属变量
+          ['vmess', 'vless', 'trojan'].forEach(function (p) {
+            strEnv('ws_cdn_' + p + '_cf_host', 'ws_cdn_' + p + '_cf_host', envs);
+            strEnv('ws_cdn_' + p + '_sni', 'ws_cdn_' + p + '_sni', envs);
+            numEnv('ws_cdn_' + p + '_cf_pt', 'ws_cdn_' + p + '_cf_pt', envs);
+          });
+        } else {
+          // 统一设置：只写共享变量
+          strEnv('ws_cdn_cf_host', 'ws_cdn_cf_host', envs);
+          strEnv('ws_cdn_sni', 'ws_cdn_sni', envs);
+          numEnv('ws_cdn_cf_pt', 'ws_cdn_cf_pt', envs);
+        }
+      }
     }
     // Socks5
     numEnv('socks5pt', 'socks5pt', envs);
@@ -866,13 +1026,16 @@
     // Argo 隧道 / CDN / 订阅
     strEnv('agn', 'agn', envs);
     strEnv('agk', 'agk', envs);
-    strEnv('cdn_host', 'cdn_host', envs);
-    numEnv('cdn_pt', 'cdn_pt', envs);
     numEnv('argo_pt', 'argo_pt', envs);
+    // argo_cf_host / argo_cf_pt：仅 Argo 且统一模式时收集（分开模式由各协议专属参数；空则回退脚本默认 saas.sin.fan）
+    if (val('argo-on') === 'on' && val('argo-mode') !== 'separate') {
+      strEnv('argo_cf_host', 'argo_cf_host', envs);
+      numEnv('argo_cf_pt', 'argo_cf_pt', envs);
+    }
     if (val('subscribe') === 'true') {
       envs.push(['subscribe', 'true']);
       numEnv('nginx_pt', 'nginx_pt', envs);
-    }
+      }
     strEnv('reality_private', 'reality_private', envs);
     strEnv('name', 'name', envs);
     return wrapCmd(envs, URLS.sb, tail);
@@ -934,40 +1097,85 @@
 
   /* ---------------- 状态联动 ---------------- */
   function syncArgoPort() {
-    var argo = val('argo');
-    var on = !!argo;
-    var card = $id('argo-tunnel-card');
-    if (card) {
-      card.style.display = on ? '' : 'none';
+    var on = val('argo-on') === 'on';
+    var params = $id('argo-tunnel-params');
+    if (params) {
+      params.style.display = on ? '' : 'none';
       if (!on) {
-        // 未启用 Argo：恢复默认值
-        $id('agn').value = '';
-        $id('agk').value = '';
-        $id('cdn_host').value = '';
-        $id('cdn_pt').value = '';
-        $id('argo_pt').value = '';
+        // 未启用 Argo：恢复默认值并清空专属字段
+        $id('agn').value = ''; $id('agk').value = '';
+        $id('argo_cf_host').value = ''; $id('argo_cf_pt').value = ''; $id('argo_pt').value = '';
         $id('tunnel-type').value = 'fixed';
+        ['argo_vmess_cf_host','argo_vmess_cf_pt',
+         'argo_vless_cf_host','argo_vless_cf_pt',
+         'argo_trojan_cf_host','argo_trojan_cf_pt'
+        ].forEach(function (id) { var el = $id(id); if (el) el.value = ''; });
+        ['argo-vmess','argo-vless','argo-trojan'].forEach(function (id) { $id(id).checked = false; });
       }
     }
+    syncArgoMode();
     syncTunnelType();
     renumberCards();
   }
-  function syncNginx() {
-    var on = val('subscribe') === 'true';
-    $id('row-nginx-pt').style.display = on ? '' : 'none';
-    $id('nginx_pt').disabled = !on;
-    if (!on) $id('nginx_pt').value = '';
+  function syncArgoMode() {
+    var anyChecked = isChecked('argo-vmess') || isChecked('argo-vless') || isChecked('argo-trojan');
+    var modeRow = $id('row-argo-mode');
+    if (modeRow) modeRow.style.display = anyChecked ? '' : 'none';
+    var mode = val('argo-mode') || 'shared';
+    var shared = $id('argo-shared');
+    var separate = $id('argo-separate');
+    if (shared) shared.style.display = (anyChecked && mode === 'shared') ? '' : 'none';
+    if (separate) separate.style.display = (anyChecked && mode === 'separate') ? '' : 'none';
+    [['argo-vmess','argo-vmess-fields'],['argo-vless','argo-vless-fields'],['argo-trojan','argo-trojan-fields']].forEach(function (p) {
+      var f = $id(p[1]);
+      if (f) f.style.display = (anyChecked && mode === 'separate' && isChecked(p[0])) ? '' : 'none';
+    });
   }
   function syncWl() {
     $id('socks5-ips').disabled = val('socks5-wl') !== 'on';
   }
-  // 端口冲突检测：仅 Singbox 页启用（mtp 页不做端口冲突检测），相同值端口同时标红发光并给出原因
-  var PORT_SB = ['hypt', 'vlrt', 'tupt', 'anypt', 'socks5pt', 'argo_pt', 'nginx_pt', 'cdn_pt'];
+
+  function syncSocks5() {
+    // 由“启用 Socks5 协议”开关统一控制：启用则显示端口与账号/白名单，不启用则整体隐藏并清空
+    var enabled = val('socks5-on') === 'on';
+    var portRow = $id('row-socks5pt');
+    var sub = $id('socks5-sub');
+    if (portRow) portRow.style.display = enabled ? '' : 'none';
+    if (sub) sub.style.display = enabled ? '' : 'none';
+    if (!enabled) {
+      $id('socks5pt').value = '';
+      $id('socks5-username').value = '';
+      $id('socks5-password').value = '';
+      $id('socks5-wl').value = '';
+      $id('socks5-ips').value = '';
+    }
+    syncWl();
+  }
+
+  function checkSocks5Required() {
+    if (currentTab() !== 'sb') return [];
+    var el = $id('socks5pt');
+    if (!el) return [];
+    if (val('socks5-on') === 'on') {
+      if (!val('socks5pt')) {
+        el.classList.add('err');
+        el.setAttribute('title', '已启用 Socks5：端口必填（可点 🎲 随机生成）');
+        return ['已启用 Socks5 但端口为空：命令将缺少 socks5pt，Socks5 不会启用（请填写端口或点 🎲）'];
+      }
+      return [];
+    }
+    el.classList.remove('err');
+    el.removeAttribute('title');
+    return [];
+  }
+
+  var PORT_SB = ['hypt', 'vlrt', 'tupt', 'anypt', 'socks5pt', 'argo_pt', 'nginx_pt'];
   var PORT_LABELS = {
     hypt: 'Hysteria2 端口', vlrt: 'Vless-Reality 端口', tupt: 'Tuic 端口', anypt: 'AnyTLS 端口',
     socks5pt: 'Socks5 端口', argo_pt: 'Argo隧道Tunnel 映射端口',
-    nginx_pt: 'Nginx 订阅端口', cdn_pt: 'CF 对外端口'
+    nginx_pt: 'Nginx 订阅端口'
   };
+
   function checkPortConflict() {
     if (currentTab() !== 'sb') return [];
     var ids = PORT_SB;
@@ -1002,40 +1210,58 @@
     });
     return msgs;
   }
-  function checkSocks5Required() {
-    if (currentTab() !== 'sb') return [];
-    var el = $id('socks5pt');
-    if (!el) return [];
-    if (val('socks5-on') === 'on') {
-      if (!val('socks5pt')) {
+
+  function syncNginx() {
+    var on = val('subscribe') === 'true';
+    $id('row-nginx-pt').style.display = on ? '' : 'none';
+    $id('nginx_pt').disabled = !on;
+    if (!on) $id('nginx_pt').value = '';
+  }
+  function syncWsCdn() {
+    var on = val('ws-cdn-on') === 'on';
+    var params = $id('ws-cdn-params');
+    if (params) params.style.display = on ? '' : 'none';
+    var any = wsCdnAny();
+    var modeRow = $id('row-ws-cdn-mode');
+    if (modeRow) modeRow.style.display = (on && any) ? '' : 'none';
+    var mode = val('ws-cdn-mode') || 'shared';
+    var shared = $id('ws-cdn-shared');
+    if (shared) shared.style.display = (on && any && mode === 'shared') ? '' : 'none';
+    // 专属字段区：整体随「分开设置」显示
+    var sep = $id('ws-cdn-separate');
+    if (sep) sep.style.display = (on && any && mode === 'separate') ? '' : 'none';
+    // 专属字段：仅「分开设置」模式且勾选该协议才展开
+    [['ws-cdn-vmess', 'ws-cdn-vmess-fields'],
+     ['ws-cdn-vless', 'ws-cdn-vless-fields'],
+     ['ws-cdn-trojan', 'ws-cdn-trojan-fields']
+    ].forEach(function (p) {
+      var f = $id(p[1]);
+      if (f) f.style.display = (on && any && mode === 'separate' && isChecked(p[0])) ? '' : 'none';
+    });
+  }
+  // WS-CDN SNI 拦截：SNI 不能填 IP（必须是真实子域名，CDN 按 Host/SNI 路由回源）
+  function checkWsCdnSni() {
+    var bad = [];
+    [['ws_cdn_sni', '共享 CDN SNI'], ['ws_cdn_vmess_sni', 'Vmess 专属 SNI'],
+     ['ws_cdn_vless_sni', 'Vless 专属 SNI'], ['ws_cdn_trojan_sni', 'Trojan 专属 SNI']
+    ].forEach(function (p) {
+      var el = $id(p[0]);
+      if (!el) return;
+      var v = String(el.value).trim();
+      if (!v) { el.classList.remove('err'); el.removeAttribute('title'); return; }
+      var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(v) || v.indexOf(':') >= 0;
+      if (isIp) {
         el.classList.add('err');
-        el.setAttribute('title', '已启用 Socks5：端口必填（可点 🎲 随机生成）');
-        return ['已启用 Socks5 但端口为空：命令将缺少 socks5pt，Socks5 不会启用（请填写端口或点 🎲）'];
+        el.setAttribute('title', p[1] + ' 不能是 IP：SNI 必须填真实子域名（Host/SNI，CDN 按它路由回源）');
+        bad.push(p[1] + ' 填了 IP（' + v + '）：SNI 不能是 IP，必须填真实子域名');
+      } else {
+        el.classList.remove('err');
+        el.removeAttribute('title');
       }
-      return [];
-    }
-    el.classList.remove('err');
-    el.removeAttribute('title');
-    return [];
+    });
+    return bad;
   }
-  // Socks5 账号/白名单区：由“启用 Socks5 协议”开关控制
-  function syncSocks5() {
-    // 由“启用 Socks5 协议”开关统一控制：启用则显示端口与账号/白名单，不启用则整体隐藏并清空
-    var enabled = val('socks5-on') === 'on';
-    var portRow = $id('row-socks5pt');
-    var sub = $id('socks5-sub');
-    if (portRow) portRow.style.display = enabled ? '' : 'none';
-    if (sub) sub.style.display = enabled ? '' : 'none';
-    if (!enabled) {
-      $id('socks5pt').value = '';
-      $id('socks5-username').value = '';
-      $id('socks5-password').value = '';
-      $id('socks5-wl').value = '';
-      $id('socks5-ips').value = '';
-    }
-    syncWl();
-  }
-  // 直连协议 SNI：仅当对应端口填了值才显示；端口清空时同步清空对应 SNI
+
   function syncSniByPort() {
     var pairs = [['hypt', 'row-hy-sni', 'hy_sni'], ['vlrt', 'row-vl-sni', 'vl_sni'], ['tupt', 'row-tu-sni', 'tu_sni'], ['anypt', 'row-any-sni', 'any_sni']];
     pairs.forEach(function (p) {
@@ -1162,18 +1388,22 @@
     syncMgFields();
     syncSniByPort();
     syncSocks5();
+    syncWsCdn();
     var conflicts = checkPortConflict();
     var s5req = checkSocks5Required();
+    var wsSni = checkWsCdnSni();
     syncTunnelType();
     var warn = '';
     if (conflicts.length) warn = conflicts.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
     if (s5req.length) warn += s5req.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
+    if (wsSni.length) warn += wsSni.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
     $id('cmd').value = warn + (currentTab() === 'sb' ? buildSb() : buildMtpNew());
     var mo = $id('mg-out');
     mo.value = warn + buildMg();
     autoGrow(mo);
     if (conflicts.length) uiError('存在端口冲突：' + conflicts.join('；'));
     if (s5req.length) uiError(s5req.join('；'));
+    if (wsSni.length) uiError(wsSni.join('；'));
     setGlobalErr(UI_ERRORS);
     renumberCards();
   }
@@ -1281,20 +1511,21 @@
     });
   });
 
-  // CF 优选域名候选（前两项为推荐值；cdn_host 留空时脚本默认 saas.sin.fan）
-  var CDN_LIST = ['saas.sin.fan', 'cdn.dada.nyc.mn', 'cdns.doon.eu.org', 'cf.090227.xyz', 'cf.877774.xyz', 'cf.008500.xyz', 'www.shopify.com', 'mfa.gov.ua', 'cf.zhetengsha.eu.org', 'store.ubi.com', 'sub.danfeng.eu.org', 'cf.877771.xyz', 'cf.130519.xyz', 'cf.tencentapp.cn', 'cf.cloudflare.182682.xyz', 'bestcf.030101.xyz', 'cdn.2020111.xyz', 'cf.0sm.com', 'cf.900501.xyz', 'cfip.1323123.xyz', 'cfip.cfcdn.vip', 'cfip.xxxxxxxx.tk', 'cloudflare.182682.xyz', 'cloudflare-dl.byoip.top', 'cloudflare-ip.mofashi.ltd', 'fn.130519.xyz', 'freeyx.cloudflare88.eu.org'];
-  var cdnSel = document.querySelector('select.pick-cdn[data-target="cdn_host"]');
-  CDN_LIST.forEach(function (d) {
-    var o = document.createElement('option');
-    o.value = d;
-    o.textContent = d;
-    cdnSel.appendChild(o);
-  });
-  cdnSel.addEventListener('change', function () {
-    if (!cdnSel.value) return;
-    $id('cdn_host').value = cdnSel.value;
-    cdnSel.selectedIndex = 0;
-    regen();
+  // CF 优选域名候选（首位为推荐值；留空时脚本默认 saas.sin.fan）
+  var CDN_LIST = ['saas.sin.fan', 'cdn.dada.nyc.mn', 'cdns.doon.eu.org', 'cf.090227.xyz', 'mfa.gov.ua', 'store.ubi.com', 'cf.877774.xyz'];
+  // 对所有 .pick-cdn 速选下拉统一填充并绑定（覆盖 Argo argo_cf_host 及各 WS-CDN 专属/共享 CF 优选域名）
+  document.querySelectorAll('select.pick-cdn[data-target]').forEach(function (sel) {
+    CDN_LIST.forEach(function (d) {
+      var o = document.createElement('option');
+      o.value = d;
+      o.textContent = d;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () {
+      if (!sel.value) return;
+      $id(sel.getAttribute('data-target')).value = sel.value;
+      regen();
+    });
   });
 
   // MTProxy 伪装域名候选（下拉可反复选择，输入框仍可手输）
@@ -1323,7 +1554,7 @@
   if (!$id('mtpn-port').value) $id('mtpn-port').value = String(randPort());
   if (!$id('mtpn-secret').value) $id('mtpn-secret').value = genHex32();
   initCardNums();
-  syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode();
+syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode(); syncWsCdn();
   regen();
 })();
 </script>

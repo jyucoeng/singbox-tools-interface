@@ -8,7 +8,7 @@
 
 ## 功能
 
-- **📦 Singbox 一键脚本（sb.sh，最新主力脚本）**：Hysteria2 / Vless-Reality / Tuic / AnyTLS 直连协议自由组合，VMess-WS-TLS / Trojan-WS-TLS / Vless-WS-TLS Argo 三选一，Socks5（含 IP 白名单 socks5_wl_flag / socks5_ips），UUID / 四协议独立 SNI（hy_sni / vl_sni / tu_sni / any_sni）/ Reality 私钥 / Argo 固定隧道（agn 手输，留空为临时隧道）/ CF 优选域名（cdn_host，内置优选列表）/ Nginx 订阅等全局配置，rep / ins / del / delall / list / list key / ups 动作一键生成，附 25 条 sb 快捷指令速查。
+- **📦 Singbox 一键脚本（sb.sh，最新主力脚本）**：Hysteria2 / Vless-Reality / Tuic / AnyTLS 直连协议自由组合，VMess-WS-TLS / Trojan-WS-TLS / Vless-WS-TLS Argo 三选一，**WS-CDN 直连（ws_cdn：vmess/vless/trojan 经你的 CDN 反代到 nginx，可多选，支持每个协议不同子域名），** Socks5（含 IP 白名单 socks5_wl_flag / socks5_ips），UUID / 四协议独立 SNI（hy_sni / vl_sni / tu_sni / any_sni）/ Reality 私钥 / Argo 固定隧道（agn 手输，留空为临时隧道）/ CF 优选域名（cdn_host，内置优选列表）/ Nginx 订阅等全局配置，rep / ins / del / delall / list / list key / ups 动作一键生成，附 25 条 sb 快捷指令速查。
 - **✈️ MTProxy 新版（mtp-new.sh）**：交互菜单 / Go 版 / Telemt 高性能版三种安装模式，配额、到期、限速、重置日参数，Telemt 多用户管理命令（adduser / users / getuser / moduser / deluser）实时生成，32 位 hex 密钥一键生成。
 - 全部端口输入框支持 🎲 一键随机端口；UUID / Socks5 密码 / Reality 私钥 / Telemt 密钥支持一键随机生成（Reality 私钥采用与脚本 `gen_reality_private()` 相同的 base64(32 字节) 算法）。
 - 深色 / 浅色主题切换（本地记忆），curl / wget 双下载方式，一键复制。
