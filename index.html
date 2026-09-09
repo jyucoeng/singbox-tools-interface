@@ -484,6 +484,18 @@
           <input type="text" id="out_ip" placeholder="仅出口 IP 与服务器 IP 不一致时填写">
         </div>
         <div class="row">
+          <label>域名替代 IP 显示 <span class="pill">direct_host</span></label>
+          <select id="direct-host-on">
+            <option value="">不启用域名替代ip显示（默认，节点显示真实 IP）</option>
+            <option value="on">启用域名替代ip显示（需要自行添加DNS记录）</option>
+          </select>
+        </div>
+        <p class="note"><span class="warn-org">仅对直连协议（hy2 / tuic / vless-reality / anytls / socks5）生效。</span> Argo 与 CDN 回源（ws_cdn）协议各有自己的 CDN 域名，不受此项影响。</p>
+        <div class="row" id="row-direct-host" style="display:none">
+          <label>对外域名 <span class="pill">direct_host</span></label>
+          <input type="text" id="direct_host" pattern="^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$" title="只能填域名，如 node.example.com" placeholder="如 node.example.com（需在 Cloudflare DNS 加对应的 A/AAAA 记录并关闭小黄云）">
+        </div>
+        <div class="row">
           <label>Reality 私钥 <span class="pill">reality_private</span></label>
           <div class="ctl">
             <input type="text" id="reality_private" placeholder="留空自动生成（重装保持节点一致），或点右侧按钮">
@@ -970,6 +982,14 @@
     strEnv('uuid', 'uuid', envs);
     numEnv('ippz', 'ippz', envs);
     strEnv('out_ip', 'out_ip', envs);
+    // 域名替代 IP 显示（direct_host）：
+    //   - 开关=启用 且 输入为空 → 不检测、不写入
+    //   - 开关=启用 且 输入非空   → 检测域名合法性，合法才写入命令区
+    //   - 开关=不启用 → 无论输入是什么都不写入
+    var dhVal = val('direct_host');
+    if (val('direct-host-on') === 'on' && dhVal && isDomain(dhVal)) {
+      strEnv('direct_host', 'direct_host', envs);
+    }
     strEnv('hy_sni', 'hy_sni', envs);
     strEnv('vl_sni', 'vl_sni', envs);
     strEnv('tu_sni', 'tu_sni', envs);
@@ -1262,6 +1282,39 @@
     return bad;
   }
 
+  // 对外域名（direct_host）合法域名校验：与 sb00.sh 的 is_valid_domain 一致（IPv4/IPv6/带路径/单标签 均拒绝）
+  function isDomain(v) {
+    return /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(v);
+  }
+  // direct_host 校验：开关关闭或为空时不报错；开启且非合法域名时报错（输入框标红 + 命令区 # 注释）
+  function checkDirectHost() {
+    var bad = [];
+    var el = $id('direct_host');
+    if (!el) return bad;
+    var on = val('direct-host-on') === 'on';
+    var v = String(el.value).trim();
+    el.classList.remove('err');
+    el.removeAttribute('title');
+    if (!on || !v) return bad;
+    if (!isDomain(v)) {
+      el.classList.add('err');
+      el.setAttribute('title', '对外域名（direct_host）只能填域名，如 node.example.com');
+      bad.push('对外域名（direct_host）不合法（' + v + '）：只能填域名，不能是 IP/带路径，如 node.example.com');
+    }
+    return bad;
+  }
+  // 域名替代 IP 显示开关联动：启用才显示域名输入框；未启用则隐藏并清空输入（不写入命令区）
+  function syncDirectHost() {
+    var on = val('direct-host-on') === 'on';
+    var row = $id('row-direct-host');
+    var inp = $id('direct_host');
+    if (row) row.style.display = on ? '' : 'none';
+    if (inp) {
+      inp.disabled = !on;
+      if (!on) inp.value = '';
+    }
+  }
+
   function syncSniByPort() {
     var pairs = [['hypt', 'row-hy-sni', 'hy_sni'], ['vlrt', 'row-vl-sni', 'vl_sni'], ['tupt', 'row-tu-sni', 'tu_sni'], ['anypt', 'row-any-sni', 'any_sni']];
     pairs.forEach(function (p) {
@@ -1389,14 +1442,17 @@
     syncSniByPort();
     syncSocks5();
     syncWsCdn();
+    syncDirectHost();
     var conflicts = checkPortConflict();
     var s5req = checkSocks5Required();
     var wsSni = checkWsCdnSni();
+    var dhBad = checkDirectHost();
     syncTunnelType();
     var warn = '';
     if (conflicts.length) warn = conflicts.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
     if (s5req.length) warn += s5req.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
     if (wsSni.length) warn += wsSni.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
+    if (dhBad.length) warn += dhBad.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
     $id('cmd').value = warn + (currentTab() === 'sb' ? buildSb() : buildMtpNew());
     var mo = $id('mg-out');
     mo.value = warn + buildMg();
@@ -1404,6 +1460,7 @@
     if (conflicts.length) uiError('存在端口冲突：' + conflicts.join('；'));
     if (s5req.length) uiError(s5req.join('；'));
     if (wsSni.length) uiError(wsSni.join('；'));
+    if (dhBad.length) uiError(dhBad.join('；'));
     setGlobalErr(UI_ERRORS);
     renumberCards();
   }
