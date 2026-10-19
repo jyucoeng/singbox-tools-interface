@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Singbox-Tools 一键 SSH 命令生成器：在线勾选协议、端口、SNI、Argo、WS-CDN 等参数，生成可直接粘贴执行的 sb.sh / mtp-new.sh 安装命令。" />
   <title>Singbox-Tools 一键SSH命令生成器</title>
   <style>
     :root {
@@ -218,8 +219,8 @@
     <button id="theme-btn" class="theme-btn" title="切换深色/浅色模式">☀️</button>
     <h1>Singbox-Tools 脚本工具箱🧰 一键SSH命令生成器</h1>
     <p>
-      项目地址：<a href="https://github.com/jyucoeng/singbox-tools" target="_blank">github.com/jyucoeng/singbox-tools</a>
-      　|　其他命令查询：<a href="https://pkg.tbbbk.com/" target="_blank">pkg.tbbbk.com（Linux 应用安装器 · 180+ 应用一键安装命令）</a>
+      项目地址：<a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">github.com/jyucoeng/singbox-tools</a>
+      　|　其他命令查询：<a href="https://pkg.tbbbk.com/" target="_blank" rel="noopener">pkg.tbbbk.com（Linux 应用安装器 · 180+ 应用一键安装命令）</a>
     </p>
   </header>
 
@@ -368,7 +369,7 @@
             <label>Argo 隧道 Token <span class="pill">agk</span></label>
             <input type="text" id="agk" placeholder="ey 开头字符串或 {…} JSON，引号自动处理">
           </div>
-          <p class="note" id="tunnel-note">固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。</p>
+          <p class="note" id="tunnel-note">固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank" rel="noopener">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。</p>
           <div class="row">
             <label>Argo隧道Tunnel 映射端口 <span class="pill">argo_pt</span></label>
             <input type="text" id="argo_pt" placeholder="默认 8001，一般不建议修改" inputmode="numeric">
@@ -459,7 +460,7 @@
       </div>
       <div class="col">
       <section class="card">
-        <h2>② 全局配置</h2>
+        <h2>④ 全局配置</h2>
         <div class="row">
           <label>UUID 密码 <span class="pill">uuid</span></label>
           <div class="ctl">
@@ -493,7 +494,7 @@
         <p class="note"><span class="warn-org">仅对直连协议（hy2 / tuic / vless-reality / anytls / socks5）生效。</span> Argo 与 CDN 回源（ws_cdn）协议各有自己的 CDN 域名，不受此项影响。</p>
         <div class="row" id="row-direct-host" style="display:none">
           <label>对外域名 <span class="pill">direct_host</span></label>
-          <input type="text" id="direct_host" pattern="^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$" title="只能填域名，如 node.example.com" placeholder="如 node.example.com（需在 Cloudflare DNS 加对应的 A/AAAA 记录并关闭小黄云）">
+          <input type="text" id="direct_host" title="只能填域名，如 node.example.com" placeholder="如 node.example.com（需在 Cloudflare DNS 加对应的 A/AAAA 记录并关闭小黄云）">
         </div>
         <div class="row">
           <label>Reality 私钥 <span class="pill">reality_private</span></label>
@@ -505,7 +506,7 @@
       </section>
 
       <section class="card">
-        <h2>④ Socks5 账号与 IP 白名单 <span class="tip">启用 Socks5 后显示端口与下方账号/白名单</span></h2>
+        <h2>⑤ Socks5 账号与 IP 白名单 <span class="tip">启用 Socks5 后显示端口与下方账号/白名单</span></h2>
         <div class="row">
           <label>启用 Socks5 协议</label>
           <select id="socks5-on">
@@ -545,7 +546,7 @@
       </section>
 
       <section class="card">
-        <h2>⑤ 安装 / 管理动作 <span class="pill">sb.sh 尾部参数</span></h2>
+        <h2>⑥ 安装 / 管理动作 <span class="pill">sb.sh 尾部参数</span></h2>
         <div class="row">
           <label>执行动作</label>
           <select id="sb-tail">
@@ -562,7 +563,7 @@
       </section>
 
       <section class="card">
-        <h2>⑥ 节点订阅</h2>
+        <h2>⑦ 节点订阅</h2>
         <div class="row">
           <label>节点订阅 <span class="pill">subscribe</span></label>
           <select id="subscribe">
@@ -632,7 +633,7 @@
       </section>
 
       <section class="card" id="mtpn-telemt-card">
-        <h2>③ Telemt 高性能版专属参数</h2>
+        <h2>② Telemt 高性能版专属参数</h2>
         <fieldset class="lock-box" id="mtpn-telemt-lock" disabled>
           <div class="row">
             <label>初始管理员用户 <span class="pill">TELEMT_USER</span></label>
@@ -664,7 +665,7 @@
 
       <div class="col">
       <section class="card">
-        <h2>② 执行动作</h2>
+        <h2>③ 执行动作</h2>
         <div class="row">
           <label>执行动作 <span class="pill">mtp-new.sh 尾部参数</span></label>
           <select id="mtpn-tail">
@@ -760,8 +761,8 @@
   </div>
 
   <footer>
-    本页面仅为 <a href="https://github.com/jyucoeng/singbox-tools" target="_blank">jyucoeng/singbox-tools</a> 的命令生成辅助界面，脚本功能与版权归原项目所有，仅供学习交流。<br>
-    界面版本 v1.0.1 · 2026-09-08
+    本页面仅为 <a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">jyucoeng/singbox-tools</a> 的命令生成辅助界面，脚本功能与版权归原项目所有，仅供学习交流。<br>
+    界面版本 v1.0.2 · 2026-10-19
   </footer>
 </div>
 
@@ -804,11 +805,16 @@
   function setGlobalErr(msgs) {
     var el = $id('err-global');
     if (!el) return;
+    // 用 textContent 逐条插入：消息里含用户输入（域名/SNI/端口），
+    // 走 innerHTML 会把 <img onerror=...> 之类当 HTML 执行
+    while (el.firstChild) el.removeChild(el.firstChild);
     if (msgs && msgs.length) {
-      el.innerHTML = msgs.map(function (m) { return '⚠️ ' + m; }).join('<br>');
+      msgs.forEach(function (m, i) {
+        if (i) el.appendChild(document.createElement('br'));
+        el.appendChild(document.createTextNode('⚠️ ' + m));
+      });
       el.style.display = '';
     } else {
-      el.innerHTML = '';
       el.style.display = 'none';
     }
   }
@@ -966,9 +972,15 @@
   var SB_MGMT_TAILS = ['del', 'delall', 'list', 'list key', 'ups'];
   var MTPN_MGMT_TAILS = ['del', 'list', 'start', 'stop', 'restart', 'usage', 'usage_total'];
 
+  // 自由输入类端口（下拉选的 CDN 端口天然合法，不在此列）
+  var PORT_KEYS = { hypt: 1, vlrt: 1, tupt: 1, anypt: 1, socks5pt: 1, argo_pt: 1, nginx_pt: 1, PORT: 1 };
+  function isValidPort(v) { return /^\d+$/.test(v) && +v >= 1 && +v <= 65535; }
   function numEnv(k, id, envs) {
     var v = val(id);
-    if (v) envs.push([k, isNum(v) ? v : qv(v)]);
+    if (!v) return;
+    // 非法端口直接丢弃，避免把 99999 / -1 / "80 80" 这类值塞进命令
+    if (PORT_KEYS[k] && !isValidPort(v)) return;
+    envs.push([k, isNum(v) ? v : qv(v)]);
   }
   function strEnv(k, id, envs) {
     var v = val(id);
@@ -1006,6 +1018,7 @@
         envs.push(['argo', "'" + argoArr.join(',') + "'"]);
         if (val('argo-mode') === 'separate') {
           ['vmess', 'vless', 'trojan'].forEach(function (p) {
+            if (!isChecked('argo-' + p)) return;   // 未勾选的协议不写残留字段
             strEnv('argo_' + p + '_cf_host', 'argo_' + p + '_cf_host', envs);
             numEnv('argo_' + p + '_cf_pt', 'argo_' + p + '_cf_pt', envs);
           });
@@ -1023,6 +1036,7 @@
         if (val('ws-cdn-mode') === 'separate') {
           // 分开设置：只写各协议专属变量
           ['vmess', 'vless', 'trojan'].forEach(function (p) {
+            if (!isChecked('ws-cdn-' + p)) return;   // 未勾选的协议不写残留字段
             strEnv('ws_cdn_' + p + '_cf_host', 'ws_cdn_' + p + '_cf_host', envs);
             strEnv('ws_cdn_' + p + '_sni', 'ws_cdn_' + p + '_sni', envs);
             numEnv('ws_cdn_' + p + '_cf_pt', 'ws_cdn_' + p + '_cf_pt', envs);
@@ -1096,10 +1110,12 @@
     var ready = $id('mg-ready') && $id('mg-ready').checked;
     if (mode !== 'telemt' || !ready) return '';
     var c = val('mg-cmd') || 'adduser';
-    var fetcher = 'curl -Ls ' + URLS.mtpnew;
+    // 跟随顶部「下载方式」选择（原来硬编码 curl，选了 wget 也不生效）
+    var dl = val('dl') || 'curl';
+    var fetcher = dl === 'curl' ? ('curl -Ls ' + URLS.mtpnew) : ('wget -qO- ' + URLS.mtpnew);
     var user = val('mg-user');
-    if (c === 'users') return 'bash <(curl -Ls ' + URLS.mtpnew + ') users';
-    if (!user) return '';
+    if (c === 'users') return 'bash <(' + fetcher + ') users';
+    if (!user) return '# ⚠️ 请先填写「子账号（TELEMT_USER）」';
     var envs = [['TELEMT_USER', qv(user)]];
     if (c === 'adduser' || c === 'moduser') {
       var mgExp = val('mg-expire');
@@ -1111,7 +1127,7 @@
     }
     var s = '';
     envs.forEach(function (p) { if (p[1] !== '') s += p[0] + '=' + p[1] + ' \\\n'; });
-    return s + 'bash <(curl -Ls ' + URLS.mtpnew + ') ' + c;
+    return s + 'bash <(' + fetcher + ') ' + c;
   }
   function strEnv2(k, id, envs) { var v = val(id); if (v) envs.push([k, qv(v)]); }
 
@@ -1182,6 +1198,16 @@
         el.setAttribute('title', '已启用 Socks5：端口必填（可点 🎲 随机生成）');
         return ['已启用 Socks5 但端口为空：命令将缺少 socks5pt，Socks5 不会启用（请填写端口或点 🎲）'];
       }
+      // 白名单开启但 IP 为空：脚本会 return 0 跳过 iptables，端口实际对全网开放
+      var wlEl = $id('socks5-ips');
+      if (val('socks5-wl') === 'on' && !val('socks5-ips')) {
+        if (wlEl) {
+          wlEl.classList.add('err');
+          wlEl.setAttribute('title', '白名单已开启但 IP 列表为空：脚本不会下发 iptables 规则，socks5 端口对所有 IP 开放');
+        }
+        return ['已开启 Socks5 白名单但 IP 列表为空：脚本会跳过 iptables 规则，socks5 端口实际对所有 IP 开放（请填写白名单 IP，或把白名单关掉）'];
+      }
+      if (wlEl) { wlEl.classList.remove('err'); wlEl.removeAttribute('title'); }
       return [];
     }
     el.classList.remove('err');
@@ -1217,7 +1243,8 @@
         var others = groups[v].filter(function (x) { return x !== id; })
                              .map(function (x) { return PORT_LABELS[x] || x; }).join('、');
         el.setAttribute('title', '端口冲突：' + (PORT_LABELS[id] || id) + ' 与 ' + others + ' 使用了同一个端口 ' + v);
-      } else {
+      } else if (!v || isValidPort(v)) {
+        // 只有端口本身合法时才清红：非法端口的标红由 checkPortRange 负责
         el.classList.remove('err');
         el.removeAttribute('title');
       }
@@ -1229,6 +1256,41 @@
       }
     });
     return msgs;
+  }
+
+  // 端口范围校验：必须是 1-65535 的整数（numEnv 会把非法值从命令里剔除，这里负责提示）
+  function checkPortRange() {
+    var ids = currentTab() === 'sb' ? PORT_SB : ['mtpn-port'];
+    var bad = [];
+    ids.forEach(function (id) {
+      var el = $id(id);
+      if (!el) return;
+      var v = String(el.value).trim();
+      if (!v || isValidPort(v)) {
+        // PORT_SB 的红框由 checkPortConflict 统一清除；mtpn-port 不归它管
+        if (id === 'mtpn-port') { el.classList.remove('err'); el.removeAttribute('title'); }
+        return;
+      }
+      el.classList.add('err');
+      el.setAttribute('title', '端口必须是 1-65535 的整数');
+      bad.push((PORT_LABELS[id] || (id === 'mtpn-port' ? 'MTProxy 监听端口' : id)) + ' 不是合法端口（' + v + '）：必须是 1-65535 的整数，已从命令中剔除');
+    });
+    return bad;
+  }
+
+  // 订阅开启但订阅端口为空：脚本会用默认 8080，但下拉文案写着「需填写」，这里提示一下
+  function checkNginxRequired() {
+    if (currentTab() !== 'sb') return [];
+    var el = $id('nginx_pt');
+    if (!el) return [];
+    if (val('subscribe') === 'true' && !val('nginx_pt')) {
+      el.classList.add('err');
+      el.setAttribute('title', '已开启订阅：建议填写端口（留空脚本将使用默认 8080）');
+      return ['已开启订阅但 Nginx 订阅端口为空：脚本将使用默认 8080'];
+    }
+    el.classList.remove('err');
+    el.removeAttribute('title');
+    return [];
   }
 
   function syncNginx() {
@@ -1262,11 +1324,15 @@
   // WS-CDN SNI 拦截：SNI 不能填 IP（必须是真实子域名，CDN 按 Host/SNI 路由回源）
   function checkWsCdnSni() {
     var bad = [];
+    // 只在 sb 标签页且 WS-CDN 真正启用时校验：
+    //   否则关掉 WS-CDN / 切到 MTProxy 标签后，残留的旧值会一直报错
+    var active = currentTab() === 'sb' && val('ws-cdn-on') === 'on';
     [['ws_cdn_sni', '共享 CDN SNI'], ['ws_cdn_vmess_sni', 'Vmess 专属 SNI'],
      ['ws_cdn_vless_sni', 'Vless 专属 SNI'], ['ws_cdn_trojan_sni', 'Trojan 专属 SNI']
     ].forEach(function (p) {
       var el = $id(p[0]);
       if (!el) return;
+      if (!active) { el.classList.remove('err'); el.removeAttribute('title'); return; }
       var v = String(el.value).trim();
       if (!v) { el.classList.remove('err'); el.removeAttribute('title'); return; }
       var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(v) || v.indexOf(':') >= 0;
@@ -1291,7 +1357,7 @@
     var bad = [];
     var el = $id('direct_host');
     if (!el) return bad;
-    var on = val('direct-host-on') === 'on';
+    var on = currentTab() === 'sb' && val('direct-host-on') === 'on';
     var v = String(el.value).trim();
     el.classList.remove('err');
     el.removeAttribute('title');
@@ -1332,7 +1398,7 @@
     if (!fixed) { $id('agn').value = ''; $id('agk').value = ''; }
     var n = $id('tunnel-note');
     if (n) n.innerHTML = fixed
-      ? '固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。'
+      ? '固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank" rel="noopener">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。'
       : '临时隧道：Cloudflare 自动分配随机域名（如 xxx.trycloudflare.com），无需配置域名/Token，服务重启域名会变，适合临时测试。<br><span class="warn-org">⚠️ 临时隧道在 VPS 重启后，订阅地址和 Argo 节点会发生改变。</span>';
   }
   function syncMtpnMode() {
@@ -1343,7 +1409,7 @@
     var tCard = $id('mtpn-telemt-card');
     var tLock = $id('mtpn-telemt-lock');
     if (tCard) tCard.style.display = isTelemt ? '' : 'none';
-    if (tLock) tLock.disabled = false;
+    if (tLock) tLock.disabled = !isTelemt;   // 非 Telemt 模式保持锁定（原来无条件解锁，锁形同虚设）
     syncMgLock();
     renderMtpnCmds();
   }
@@ -1444,21 +1510,24 @@
     syncWsCdn();
     syncDirectHost();
     var conflicts = checkPortConflict();
+    var portBad = checkPortRange();
     var s5req = checkSocks5Required();
+    var ngReq = checkNginxRequired();
     var wsSni = checkWsCdnSni();
     var dhBad = checkDirectHost();
     syncTunnelType();
     var warn = '';
-    if (conflicts.length) warn = conflicts.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
-    if (s5req.length) warn += s5req.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
-    if (wsSni.length) warn += wsSni.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
-    if (dhBad.length) warn += dhBad.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
+    [conflicts, portBad, s5req, ngReq, wsSni, dhBad].forEach(function (arr) {
+      if (arr.length) warn += arr.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
+    });
     $id('cmd').value = warn + (currentTab() === 'sb' ? buildSb() : buildMtpNew());
     var mo = $id('mg-out');
     mo.value = warn + buildMg();
     autoGrow(mo);
     if (conflicts.length) uiError('存在端口冲突：' + conflicts.join('；'));
+    if (portBad.length) uiError(portBad.join('；'));
     if (s5req.length) uiError(s5req.join('；'));
+    if (ngReq.length) uiError(ngReq.join('；'));
     if (wsSni.length) uiError(wsSni.join('；'));
     if (dhBad.length) uiError(dhBad.join('；'));
     setGlobalErr(UI_ERRORS);
@@ -1474,10 +1543,9 @@
         p.classList.toggle('active', p.id === 'tab-' + t);
       });
       $id('out-script').textContent = SCRIPT_NAMES[t];
+      // 各校验函数都已按 currentTab() 守卫，regen() 算出的横幅就是当前标签页的，
+      // 不需要再清空（原来的清空会让切回标签页时错误不显示，要等下一次输入才出现）
       regen();
-      // 切换 Tab 时暂时清空共享错误横幅，交互后重新计算
-      UI_ERRORS = [];
-      setGlobalErr([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
@@ -1581,6 +1649,7 @@
     sel.addEventListener('change', function () {
       if (!sel.value) return;
       $id(sel.getAttribute('data-target')).value = sel.value;
+      sel.selectedIndex = 0;   // 与 sni-pick 一致：选完复位，避免下拉显示的旧值与输入框不符
       regen();
     });
   });
@@ -1603,6 +1672,14 @@
     }
     mtpnDomainSel.selectedIndex = 0;
     regen();
+  });
+
+  // 可访问性：把 .row 里的 label 关联到该行第一个带 id 的控件（点击标签即可聚焦输入框）
+  document.querySelectorAll('.row').forEach(function (row) {
+    var lab = row.querySelector('label');
+    if (!lab || lab.htmlFor || lab.classList.contains('ck')) return;
+    var ctl = row.querySelector('input[id], select[id], textarea[id]');
+    if (ctl) lab.htmlFor = ctl.id;
   });
 
   renderCmdList('sb-cmds', SB_CMDS);
