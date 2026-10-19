@@ -752,17 +752,23 @@
             <option value="wget">wget</option>
           </select>
         </label>
+        <label>换行方式
+          <select id="line-mode">
+            <option value="one">单行（推荐，粘贴不易出错）</option>
+            <option value="multi">多行（每行一个变量，便于核对）</option>
+          </select>
+        </label>
         <button id="copy" class="primary" type="button">📋 复制命令</button>
         <button id="reset" class="ghost" type="button">♻️ 重置表单</button>
       </div>
       <textarea id="cmd" readonly spellcheck="false"></textarea>
-      <p class="hint">提示：整段复制粘贴到 SSH 终端回车即可执行（多行 \ 续行符已处理好）。字符串值已按脚本要求使用英文单引号包裹，含特殊字符的密码也不会被截断。</p>
+      <p class="hint">提示：<b>单行</b>模式下整条命令只有一行，即使终端把换行吃掉也不会断（FinalShell 等推荐）；<b>多行</b>模式每行一个变量便于核对，但粘贴时若终端吞换行，行尾的 <code>\</code> 会失效导致命令报错。字符串值已按脚本要求使用英文单引号包裹，含特殊字符的密码也不会被截断。</p>
     </section>
   </div>
 
   <footer>
     本页面仅为 <a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">jyucoeng/singbox-tools</a> 的命令生成辅助界面，脚本功能与版权归原项目所有，仅供学习交流。<br>
-    界面版本 v1.0.2 · 2026-10-19
+    界面版本 v1.0.3 · 2026-10-19
   </footer>
 </div>
 
@@ -828,15 +834,25 @@
     if (isNum(v)) return v;
     return "'" + v.replace(/'/g, "'\\''") + "'";
   }
+  // 按「换行方式」拼接：parts 除最后一项是命令本体外，其余都是 KEY=VALUE
+  //   one   → 全部用空格连成一行（终端吞换行也不受影响）
+  //   multi → 每个变量独占一行、行尾反斜杠续行（便于肉眼核对）
+  function joinCmd(parts) {
+    if (val('line-mode') === 'multi') {
+      var head = parts.slice(0, -1).map(function (x) { return x + ' \\'; }).join('\n');
+      return (head ? head + '\n' : '') + parts[parts.length - 1];
+    }
+    return parts.join(' ');
+  }
   function wrapCmd(envs, url, tail) {
     var dl = val('dl') || 'curl';
     var fetcher = dl === 'curl' ? ('curl -Ls ' + url) : ('wget -qO- ' + url);
-    var s = '';
+    var parts = [];
     envs.forEach(function (p) {
-      if (p[1] !== '' && p[1] != null) s += p[0] + '=' + p[1] + ' \\\n';
+      if (p[1] !== '' && p[1] != null) parts.push(p[0] + '=' + p[1]);
     });
-    s += 'bash <(' + fetcher + ')' + (tail ? ' ' + tail : '');
-    return s;
+    parts.push('bash <(' + fetcher + ')' + (tail ? ' ' + tail : ''));
+    return joinCmd(parts);
   }
   function genUuid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -1125,9 +1141,10 @@
       strEnv2('TELEMT_SECRET', 'mg-secret', envs);
       numEnv('TELEMT_DEDICATED_PORT', 'mg-port', envs);
     }
-    var s = '';
-    envs.forEach(function (p) { if (p[1] !== '') s += p[0] + '=' + p[1] + ' \\\n'; });
-    return s + 'bash <(' + fetcher + ') ' + c;
+    var parts = [];
+    envs.forEach(function (p) { if (p[1] !== '') parts.push(p[0] + '=' + p[1]); });
+    parts.push('bash <(' + fetcher + ') ' + c);
+    return joinCmd(parts);
   }
   function strEnv2(k, id, envs) { var v = val(id); if (v) envs.push([k, qv(v)]); }
 
@@ -1502,6 +1519,18 @@
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
   }
+  // 警告呈现方式跟着「换行方式」走：
+  //   multi → 每条形如 "# ⚠️ ..." 独占一行（误执行也只是注释）
+  //   one   → 追加到命令末尾的注释里 —— 绝不能放行首，
+  //           否则终端吞换行时整条命令会被 # 注释掉、看起来执行了其实没跑
+  function withWarn(cmd, warns) {
+    if (!cmd || !warns.length) return cmd;
+    if (val('line-mode') === 'multi') {
+      return warns.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n' + cmd;
+    }
+    return cmd + '  # ' + warns.map(function (c) { return '⚠️ ' + c; }).join('；');
+  }
+
   function regen() {
     UI_ERRORS = [];
     syncMgFields();
@@ -1516,13 +1545,13 @@
     var wsSni = checkWsCdnSni();
     var dhBad = checkDirectHost();
     syncTunnelType();
-    var warn = '';
+    var warnList = [];
     [conflicts, portBad, s5req, ngReq, wsSni, dhBad].forEach(function (arr) {
-      if (arr.length) warn += arr.map(function (c) { return '# ⚠️ ' + c; }).join('\n') + '\n';
+      arr.forEach(function (c) { warnList.push(c); });
     });
-    $id('cmd').value = warn + (currentTab() === 'sb' ? buildSb() : buildMtpNew());
+    $id('cmd').value = withWarn(currentTab() === 'sb' ? buildSb() : buildMtpNew(), warnList);
     var mo = $id('mg-out');
-    mo.value = warn + buildMg();
+    mo.value = withWarn(buildMg(), warnList);
     autoGrow(mo);
     if (conflicts.length) uiError('存在端口冲突：' + conflicts.join('；'));
     if (portBad.length) uiError(portBad.join('；'));
