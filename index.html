@@ -249,6 +249,24 @@
       /* 速查列表：命令和说明原本挤在同一行（说明被限制在 46% 宽） */
       .crow { flex-wrap: wrap; }
       .crow .cdesc { max-width: 100%; }
+
+      /* 输出区：两个下拉各占一行，下拉框右边缘对齐（原来 width:auto 一长一短） */
+      .out-tools { gap: 8px; }
+      .out-tools label { flex: 1 1 100%; }
+      .out-tools select { flex: 1; min-width: 0; width: auto; }
+
+      /* 生成的命令：white-space:pre 在窄屏只能横向滚动，长命令看不全；
+         改成 pre-wrap 让它按屏宽折行。复制取的仍是 value，不受显示影响。 */
+      #cmd, #mg-out {
+        min-height: 96px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        line-height: 1.6;
+      }
+
+      /* 提示与页脚长文本收紧，少占几行 */
+      .hint { font-size: 12px; line-height: 1.65; }
+      footer { font-size: 12px; padding: 0 6px; }
     }
 
     /* 真需要折成两行时（放不下），让两行长度尽量接近，别一边长一边短 */
