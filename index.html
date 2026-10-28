@@ -54,9 +54,20 @@
     header { position: relative; margin-bottom: 18px; display: flex; justify-content: center; align-items: center; flex-direction: column; }
     /* 标题随视口缩放：固定 34px 在 768 这类宽度下会折出孤字（末尾只剩「器」），
        而且第一行右端会被右上角绝对定位的主题按钮压住。上限仍是 34px，桌面不变。 */
-    header h1 { font-size: clamp(20px, 3vw, 34px); margin: 0 0 8px; text-align: center; }
-    /* 标题里预留的断行点：桌面/平板隐藏，只有窄屏才启用（见下方 ≤520px） */
-    .h1-br { display: none; }
+    /* 标题随视口缩放：固定 34px 在 768 这类宽度下会折出孤字，也会被右上角按钮压住。
+       断行交给 <wbr>：放得下就一行，放不下才在 🧰 后断，不靠宽度断点去猜。
+       keep-all 禁止在中文之间随意断（否则浏览器会把「命令生成器」切成「…生/成器」），
+       overflow-wrap 兜底，万一某一段本身比容器还宽也不会溢出。 */
+    header h1 {
+      font-size: clamp(20px, 3vw, 34px);
+      margin: 0 0 8px;
+      text-align: center;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+    /* keep-all 只管 CJK，emoji 仍会被当成可断点，于是 🧰 会掉到下一行行首。
+       把「脚本工具箱🧰」整体锁成不可分，断行只发生在后面的 <wbr>。 */
+    header h1 .nb { white-space: nowrap; }
     header p { margin: 0; font-size: 14px; color: var(--sub); line-height: 1.7; text-align: center; }
     .theme-btn {
       position: absolute; top: 0; right: 0;
@@ -240,10 +251,8 @@
       .crow .cdesc { max-width: 100%; }
     }
 
-    /* 手机窄屏：标题在 🧰 后断行，避免浏览器把「命令生成器」切成
-       「…命令生 / 成器」这种只剩两字的孤行。520px 以上一行放得下，不启用。 */
+    /* 真需要折成两行时（放不下），让两行长度尽量接近，别一边长一边短 */
     @media (max-width: 520px) {
-      .h1-br { display: inline; }
       header h1 { text-wrap: balance; }
     }
   </style>
@@ -253,7 +262,7 @@
 
   <header>
     <button id="theme-btn" class="theme-btn" title="切换深色/浅色模式">☀️</button>
-    <h1>Singbox-Tools 脚本工具箱🧰<br class="h1-br" /> 一键SSH命令生成器</h1>
+    <h1>Singbox-Tools <span class="nb">脚本工具箱🧰</span><wbr /> 一键SSH命令生成器</h1>
     <p>
       项目地址：<a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">github.com/jyucoeng/singbox-tools</a>
       　|　其他命令查询：<a href="https://pkg.tbbbk.com/" target="_blank" rel="noopener">pkg.tbbbk.com（Linux 应用安装器 · 180+ 应用一键安装命令）</a>
