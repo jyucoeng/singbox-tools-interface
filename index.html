@@ -52,7 +52,9 @@
 
     /* ---------- header ---------- */
     header { position: relative; margin-bottom: 18px; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-    header h1 { font-size: 34px; margin: 0 0 8px; text-align: center; }
+    /* 标题随视口缩放：固定 34px 在 768 这类宽度下会折出孤字（末尾只剩「器」），
+       而且第一行右端会被右上角绝对定位的主题按钮压住。上限仍是 34px，桌面不变。 */
+    header h1 { font-size: clamp(20px, 3vw, 34px); margin: 0 0 8px; text-align: center; }
     header p { margin: 0; font-size: 14px; color: var(--sub); line-height: 1.7; text-align: center; }
     .theme-btn {
       position: absolute; top: 0; right: 0;
@@ -86,6 +88,10 @@
     .grid + .grid { margin-top: 20px; }
     @media (max-width: 1100px) {
       .grid { grid-template-columns: 1fr; }
+    }
+    /* 701–1100px：主题按钮仍在右上角绝对定位，标题居中区域两侧各留 56px 让它 */
+    @media (min-width: 701px) and (max-width: 1100px) {
+      header { padding-left: 56px; padding-right: 56px; }
     }
     .card {
       background: rgba(127,157,255,.055);
@@ -210,6 +216,27 @@
 
     footer { margin-top: 26px; text-align: center; font-size: 13px; color: var(--sub); line-height: 1.8; }
     .ok-msg { color: var(--ok) !important; }
+
+    /* ---------- 手机适配（≤700px）----------
+       只调字号、边距和换行，不动任何布局结构：桌面端表现完全不变。
+       已有断点（1100/900/700）负责把 .grid / .row / .pgrid / .cmdlist 收成单列，
+       这里补的是它们管不到的标题区、边距和触屏输入。 */
+    @media (max-width: 700px) {
+      /* 字号已由 clamp 控住，这里只收紧行高与间距 */
+      header h1 { line-height: 1.35; margin-bottom: 6px; }
+      header p { font-size: 12.5px; line-height: 1.6; }
+      /* 主题按钮是绝对定位在右上角的，标题折行后会撞上去；给它单独留一行 */
+      header { padding-top: 52px; }
+      .theme-btn { width: 38px; height: 38px; font-size: 18px; }
+      /* 375px 屏上 20px 页边距 + 20px 卡片内边距，留给输入框的只剩 300px */
+      .wrap { padding: 0 12px; margin: 16px auto 28px; }
+      .card { padding: 14px; }
+      /* iOS Safari 对字号 <16px 的输入框会自动放大整页，点一次弹一次 */
+      input[type="text"], select, textarea { font-size: 16px; }
+      /* 速查列表：命令和说明原本挤在同一行（说明被限制在 46% 宽） */
+      .crow { flex-wrap: wrap; }
+      .crow .cdesc { max-width: 100%; }
+    }
   </style>
 </head>
 <body>
