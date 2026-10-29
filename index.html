@@ -430,7 +430,7 @@
           </div>
           <div class="row" id="row-agk">
             <label>Argo 隧道 Token <span class="pill">agk</span></label>
-            <input type="text" id="agk" placeholder="ey 开头字符串或 {…} JSON，引号自动处理">
+            <input type="text" id="agk" placeholder="ey 开头字符串或 {…} JSON；粘贴多行会自动并成一行，引号自动处理">
           </div>
           <p class="note" id="tunnel-note">固定隧道：请填写上方「Argo 固定隧道域名」与「Argo 隧道 Token」；自有 CF Tunnel 可在 <a href="https://fscarmen.cloudflare.now.cc" target="_blank" rel="noopener">fscarmen CF Json 生成网</a> 获取 JSON Token（仅选了 Argo 协议才需要）。</p>
           <div class="row">
@@ -831,7 +831,7 @@
 
   <footer>
     本页面仅为 <a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">jyucoeng/singbox-tools</a> 的命令生成辅助界面，脚本功能与版权归原项目所有，仅供学习交流。<br>
-    界面版本 v1.0.4 · 2026-10-28
+    界面版本 v1.0.5 · 2026-10-29
   </footer>
 </div>
 
@@ -839,7 +839,10 @@
 (function () {
   'use strict';
   var $id = function (x) { return document.getElementById(x); };
-  var val = function (x) { var e = $id(x); return e ? String(e.value).trim() : ''; };
+  // 读值统一净化：粘贴多行内容（含 token/JSON）时把 CR/LF/TAB 直接删掉。
+  // 原因：value 最终进 "KEY='...' bash <(...)" 的单引号里，单引号内换行是合法字面换行，
+  // 会把整条命令拆成多行 —— 单行模式下终端只执行第一行，剩下的散成乱码。
+  var val = function (x) { var e = $id(x); return e ? String(e.value).replace(/[\r\n\t]+/g, '').trim() : ''; };
   // checkbox 状态必须用 checked 判断（val() 读的是 .value，checkbox 恒为 "on"，不反映勾选状态）
   var isChecked = function (x) { var e = $id(x); return !!e && e.checked; };
   // WS-CDN 是否启用：与 sb00.sh 的 "ws_cdn=<协议列表>" 对齐——勾选了任一协议即视为启用，无独立主开关
@@ -1641,6 +1644,21 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
+
+  // 输入框落值前净化换行：粘贴多行 token / JSON / URL 时，浏览器会把 CR/LF 留在 <input> 里，
+  // 这些东西最终进 "agk='...' bash <(...)" 的单引号内会变成合法字面换行 → 命令被拆成多行。
+  // capture 阶段先清干净，后面冒泡的 regen() 读到的就是净化后的值（val() 里还有一层兜底）。
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== 'INPUT') return;
+    var v = t.value;
+    if (!/[\r\n\t]/.test(v)) return;
+    var clean = v.replace(/[\r\n\t]+/g, '');
+    var cut = v.length - clean.length;
+    var pos = t.selectionStart;
+    t.value = clean;
+    try { t.setSelectionRange(Math.max(0, pos - cut), Math.max(0, pos - cut)); } catch (_) {}
+  }, true);
 
   document.addEventListener('input', function (e) {
     var t = e.target;
