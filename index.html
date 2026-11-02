@@ -178,6 +178,17 @@
       .exbox .exitems { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; }
       .exbox label.ck { font-size: 13.5px; }
     }
+    /* 320px 屏：卡片最小宽度由内部最长不可断词撑出来，强制可收缩 */
+    @media (max-width: 400px) {
+      .grid, .card { min-width: 0; }
+      .card pre, .card textarea { overflow-wrap: anywhere; min-width: 0; }
+      .card .crow code { overflow-wrap: anywhere; }
+      .card select, .card input { min-width: 0; }
+    }
+    /* 320~360px 连两列都塞不下（VLESS-Reality 这类名字最宽），退回单列 */
+    @media (max-width: 360px) {
+      .exbox .exitems { grid-template-columns: 1fr; }
+    }
     .exbox label.ck { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; }
     .exbox label.ck input { accent-color: var(--acc); cursor: pointer; }
     .exbox label.ck input:disabled { cursor: not-allowed; }
@@ -573,8 +584,8 @@
         <div class="row">
           <label>域名替代 IP 显示 <span class="pill">direct_host</span></label>
           <select id="direct-host-on">
-            <option value="">不启用域名替代ip显示（默认，节点显示真实 IP）</option>
-            <option value="on">启用域名替代ip显示（需要自行添加DNS记录）</option>
+            <option value="">不启用（默认）</option>
+            <option value="on">启用（需配 DNS）</option>
           </select>
         </div>
         <p class="note"><span class="warn-org">仅对直连协议（hy2 / tuic / vless-reality / anytls / socks5）生效。</span> Argo 与 CDN 回源（ws_cdn）协议各有自己的 CDN 域名，不受此项影响。</p>
@@ -636,12 +647,12 @@
         <div class="row">
           <label>执行动作</label>
           <select id="sb-tail">
-            <option value="rep">rep · 覆盖式安装（默认，可改配置后重装）</option>
-            <option value="ins">ins · 安装（不清理旧配置）</option>
+            <option value="rep">rep · 覆盖安装（默认）</option>
+            <option value="ins">ins · 全新安装</option>
             <option value="del">del · 卸载（保留二进制）</option>
             <option value="delall">delall · 全部卸载并清理</option>
             <option value="list">list · 查看节点</option>
-            <option value="list key">list key · 查看节点 + Reality 私钥</option>
+            <option value="list key">list key · 含私钥</option>
             <option value="ups">ups · 更新 sing-box 内核</option>
           </select>
         </div>
@@ -672,10 +683,11 @@
         <div class="row">
           <label>自动上报 <span class="pill">REPORT_FLAG</span></label>
           <select id="report-flag">
-            <option value="">默认 关闭（不往任何地方推节点）</option>
-            <option value="1">开启（每次生成节点后自动推送）</option>
+            <option value="">关闭（默认）</option>
+            <option value="1">开启（自动推送）</option>
           </select>
         </div>
+        <p class="note">开启后每次生成节点都会自动推送到 sub-merge；关闭时一次都不推。</p>
         <div id="report-params" style="display:none">
           <div class="row">
             <label>服务端地址 <span class="pill">REPORT_BASE</span><span class="req">*</span></label>
