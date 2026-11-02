@@ -643,6 +643,37 @@
         <p class="note">📌 订阅地址 URL = <code>https://域名/sub/UUID</code>，域名自动按以下顺序取：<br>
 <b>有固定 Argo（隧道存活）就直接用固定 Argo</b> → 否则用「共享回源域名 ws_cdn_sni」→ 否则用「专属回源域名 ws_cdn_vmess_sni / ws_cdn_vless_sni / ws_cdn_trojan_sni（取第一个非空）」→ 否则用「临时 Argo」→ 最后才是 <code>http://IP:nginx_pt</code>（明文）。</p>
       </section>
+
+      <section class="card">
+        <h2>⑧ 节点上报 <span class="pill">sub-merge</span></h2>
+        <div class="row">
+          <label>自动上报 <span class="pill">REPORT_FLAG</span></label>
+          <select id="report-flag">
+            <option value="">默认 关闭（不往任何地方推节点）</option>
+            <option value="1">开启（每次生成节点后自动推送）</option>
+          </select>
+        </div>
+        <div id="report-params" style="display:none">
+          <div class="row">
+            <label>服务端地址 <span class="pill">REPORT_BASE</span></label>
+            <input type="text" id="report-base" placeholder="留空默认 https://sub.dingdang.de5.net">
+          </div>
+          <div class="row">
+            <label>上报凭证 <span class="pill">REPORT_TOKEN</span></label>
+            <input type="text" id="report-token" placeholder="sub-merge 的 REPORT_TOKEN（主订阅 token 会 401）">
+          </div>
+          <div class="row">
+            <label>机器名 <span class="pill">REPORT_MACHINE</span></label>
+            <input type="text" id="report-machine" placeholder="留空自动用服务器 hostname，如 hk-1">
+          </div>
+          <div class="row">
+            <label>来源 <span class="pill">REPORT_SOURCE</span></label>
+            <input type="text" id="report-source" placeholder="留空用 default；同机多来源可填 airportA">
+          </div>
+        </div>
+        <p class="note">只有 <code>REPORT_FLAG=1</code> 才自动上报；地址 / 凭证 / 机器名 / 来源会落盘到 <code>/root/doraemon/submerge.conf</code>（权限 600），下次不带环境变量也生效。</p>
+        <p class="note">上报只进 sub-merge 的「自动上报」只读层，不动本机手动层；失败只在末尾黄字提示，不会中断安装。装完随时可在服务器用 <code>sb report</code> 手动推一次。</p>
+      </section>
       </div>
 
       <section class="card span2">
@@ -996,6 +1027,7 @@
     ['sb rt', '分流管理'],
     ['sb node', '节点配置修改（端口/订阅/SNI/Argo）'],
     ['sb sub', '订阅管理'],
+    ['sb report', '上报节点到 sub-merge（自动上报层）'],
     ['sb del', '卸载（保留二进制）'],
     ['sb delall', '卸载全部并清理'],
     ['sb ups', '更新 sing-box 内核'],
@@ -1152,6 +1184,14 @@
       envs.push(['subscribe', 'true']);
       numEnv('nginx_pt', 'nginx_pt', envs);
       }
+    // 节点上报：只有 REPORT_FLAG=1 才写（默认不上报）
+    if (val('report-flag') === '1') {
+      envs.push(['REPORT_FLAG', "'1'"]);
+      strEnv('REPORT_BASE', 'report-base', envs);
+      strEnv('REPORT_TOKEN', 'report-token', envs);
+      strEnv('REPORT_MACHINE', 'report-machine', envs);
+      strEnv('REPORT_SOURCE', 'report-source', envs);
+    }
     strEnv('reality_private', 'reality_private', envs);
     strEnv('name', 'name', envs);
     return wrapCmd(envs, URLS.sb, tail);
@@ -1370,6 +1410,31 @@
       el.classList.add('err');
       el.setAttribute('title', '已开启订阅：建议填写端口（留空脚本将使用默认 8080）');
       return ['已开启订阅但 Nginx 订阅端口为空：脚本将使用默认 8080'];
+    }
+    el.classList.remove('err');
+    el.removeAttribute('title');
+    return [];
+  }
+
+  // 自动上报：只有 REPORT_FLAG=1 才展开并启用下面四个字段
+  function syncReport() {
+    var on = val('report-flag') === '1';
+    var box = $id('report-params');
+    if (box) box.style.display = on ? '' : 'none';
+    ['report-base', 'report-token', 'report-machine', 'report-source'].forEach(function (id) {
+      var el = $id(id);
+      if (el) el.disabled = !on;
+    });
+  }
+  // 开了自动上报却没填凭证：装完不会推送，给个黄色提示（不阻断生成）
+  function checkReportRequired() {
+    if (currentTab() !== 'sb') return [];
+    var el = $id('report-token');
+    if (!el) return [];
+    if (val('report-flag') === '1' && !val('report-token')) {
+      el.classList.add('err');
+      el.setAttribute('title', '已开启自动上报但没填上报凭证：脚本会跳过上报（可在服务器 sb report 里补）');
+      return ['已开启自动上报但未填上报凭证：装完不会推送，可在服务器用 sb report 配置'];
     }
     el.classList.remove('err');
     el.removeAttribute('title');
@@ -1604,15 +1669,17 @@
     syncSocks5();
     syncWsCdn();
     syncDirectHost();
+    syncReport();
     var conflicts = checkPortConflict();
     var portBad = checkPortRange();
     var s5req = checkSocks5Required();
     var ngReq = checkNginxRequired();
+    var rpReq = checkReportRequired();
     var wsSni = checkWsCdnSni();
     var dhBad = checkDirectHost();
     syncTunnelType();
     var warnList = [];
-    [conflicts, portBad, s5req, ngReq, wsSni, dhBad].forEach(function (arr) {
+    [conflicts, portBad, s5req, ngReq, rpReq, wsSni, dhBad].forEach(function (arr) {
       arr.forEach(function (c) { warnList.push(c); });
     });
     $id('cmd').value = withWarn(currentTab() === 'sb' ? buildSb() : buildMtpNew(), warnList);
@@ -1623,6 +1690,7 @@
     if (portBad.length) uiError(portBad.join('；'));
     if (s5req.length) uiError(s5req.join('；'));
     if (ngReq.length) uiError(ngReq.join('；'));
+    if (rpReq.length) uiError(rpReq.join('；'));
     if (wsSni.length) uiError(wsSni.join('；'));
     if (dhBad.length) uiError(dhBad.join('；'));
     setGlobalErr(UI_ERRORS);
@@ -1668,7 +1736,7 @@
     }
     regen();
   });
-  document.addEventListener('change', function () { syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode(); regen(); });
+  document.addEventListener('change', function () { syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode(); syncReport(); regen(); });
 
   // 纯字母数字密码（不含易混淆的 0/O/1/l/I），与脚本自动生成规则一致，无转义隐患
   function genPassword() {
@@ -1798,7 +1866,7 @@
   if (!$id('mtpn-port').value) $id('mtpn-port').value = String(randPort());
   if (!$id('mtpn-secret').value) $id('mtpn-secret').value = genHex32();
   initCardNums();
-syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode(); syncWsCdn();
+syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode(); syncWsCdn(); syncReport();
   regen();
 })();
 </script>
