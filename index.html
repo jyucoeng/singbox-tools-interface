@@ -163,10 +163,13 @@
       background: var(--acc-soft); color: var(--acc);
       font-family: ui-monospace, Consolas, monospace; vertical-align: 1px;
     }
-    .row.top { align-items: flex-start; }
-    .exbox { display: flex; flex-direction: column; gap: 4px; min-height: 34px; padding: 2px 0; }
-    .exbox .exrow { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
-    .exbox .grp { font-size: 11px; color: var(--sub); min-width: 58px; letter-spacing: .02em; }
+    .row.wide { grid-template-columns: 1fr; align-items: start; }
+    .row.wide > label { margin-bottom: 4px; }
+    .exbox { display: flex; flex-direction: column; gap: 6px; min-height: 34px; padding: 2px 0; width: 100%; }
+    .exbox .exrow { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 4px 12px; align-items: start; width: 100%; }
+    .exbox .exitems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 12px; align-items: center; }
+    .exbox .grp { font-size: 11.5px; color: var(--sub); letter-spacing: .02em; white-space: nowrap; padding-top: 3px; }
+    .exbox label.ck { font-size: 13px; white-space: nowrap; }
     .exbox label.ck { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; }
     .exbox label.ck input { accent-color: var(--acc); cursor: pointer; }
     .exbox label.ck input:disabled { cursor: not-allowed; }
@@ -682,30 +685,35 @@
             <label>来源 <span class="pill">默认空</span></label>
             <input type="text" id="report-source-auto" value="不填即默认来源，无需设置" readonly tabindex="-1">
           </div>
-          <div class="row top">
+          <div class="row wide">
             <label>不上报的协议 <span class="pill">REPORT_EXCLUDE</span></label>
             <div id="report-exclude" class="exbox">
               <div class="exrow">
                 <span class="grp">直连</span>
-                <label class="ck"><input type="checkbox" class="report-ex" value="hysteria2"> Hysteria2</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="tuic"> TUIC</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="vless-reality"> VLESS-Reality</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="anytls"> AnyTLS</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="socks5"> Socks5</label>
+                <div class="exitems">
+                  <label class="ck"><input type="checkbox" class="report-ex" value="hysteria2"> Hysteria2</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="tuic"> TUIC</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="vless-reality"> VLESS-Reality</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="anytls"> AnyTLS</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="socks5" checked> Socks5</label>
+                </div>
               </div>
               <div class="exrow">
                 <span class="grp">Argo</span>
-                <label class="ck"><input type="checkbox" class="report-ex" value="vless-argo"> VLESS-Argo</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="vmess-argo"> VMess-Argo</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="trojan-argo"> Trojan-Argo</label>
+                <div class="exitems">
+                  <label class="ck"><input type="checkbox" class="report-ex" value="vless-argo"> VLESS-Argo</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="vmess-argo"> VMess-Argo</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="trojan-argo"> Trojan-Argo</label>
+                </div>
               </div>
               <div class="exrow">
                 <span class="grp">CDN 回源</span>
-                <label class="ck"><input type="checkbox" class="report-ex" value="vless-cdn"> VLESS-CDN</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="vmess-cdn"> VMess-CDN</label>
-                <label class="ck"><input type="checkbox" class="report-ex" value="trojan-cdn"> Trojan-CDN</label>
+                <div class="exitems">
+                  <label class="ck"><input type="checkbox" class="report-ex" value="vless-cdn"> VLESS-CDN</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="vmess-cdn"> VMess-CDN</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="trojan-cdn"> Trojan-CDN</label>
+                </div>
               </div>
-            </div>
           </div>
         </div>
         <p class="note lines">
@@ -713,7 +721,7 @@
           <span class="li">· 上报地址：填你自己的 sub-merge 域名，必填、无默认值。</span>
           <span class="li">· 机器名：取值于你填的 <code>name</code>（④ 全局配置里那个），会以 <code>REPORT_MACHINE</code> 一起下发；脚本只在它为空时才回落到 <code>name</code>。</span>
           <span class="li">· 来源：不用设，留空就只上报 <code>default</code>。</span>
-          <span class="li">· 不上报的协议：按脚本实际生成的节点形态分（直连 / Argo / CDN 回源），勾上哪个就不报哪个；一个都不勾=全部上报。</span>
+          <span class="li">· 不上报的协议：按脚本实际生成的节点形态分（直连 / Argo / CDN 回源），勾上哪个就不报哪个；Socks5 默认就勾上（多数客户端不吃），全不勾=全部上报。</span>
           <span class="li">· 也支持前缀写法：命令行或 conf 里填 <code>vless</code> 等于把三种 vless 一起排除，填 <code>trojan</code> 同理。</span>
           <span class="li">· Socks5 / AnyTLS 也会作为节点进入订阅，客户端不支持时可以直接把它们勾掉。</span>
           <span class="li">· 存储：<code>/root/doraemon/submerge.conf</code>，属主 root、权限 600（换凭证 / 开关上报都会重写并重新设回 600）；<code>submerge.state</code> 记录上报结果，同为 600。</span>
