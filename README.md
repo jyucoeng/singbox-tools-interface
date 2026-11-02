@@ -2,7 +2,7 @@
 
 为 [jyucoeng/singbox-tools](https://github.com/jyucoeng/singbox-tools) 制作的一键 SSH 命令生成快捷界面
 
-**在线体验：<https://singbox.dingdang.de5.net/>**
+**在线体验：<https://singbox.example.com/>**
 
 一个项目，三种部署：**Cloudflare Pages（推荐）**、**Cloudflare Workers**、**GitHub Pages** 任选，界面完全一致。
 
