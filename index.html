@@ -672,7 +672,7 @@
           </div>
         </div>
         <p class="note">只有 <code>REPORT_FLAG=1</code> 才自动上报；地址 / 凭证 / 机器名 / 来源会落盘到 <code>/root/doraemon/submerge.conf</code>（权限 600），下次不带环境变量也生效。</p>
-        <p class="note">上报只进 sub-merge 的「自动上报」只读层，不动本机手动层；失败只在末尾黄字提示，不会中断安装。装完随时可在服务器用 <code>sb report</code> 手动推一次。</p>
+        <p class="note">上报只进 sub-merge 的「自动上报」只读层，不动本机手动层；失败只在末尾黄字提示，不会中断安装。装完随时可在服务器用 <code>sb report</code> 手动推一次，用 <code>sb report status</code> 查开关 / 最近一次上报时间与结果 / 目标地址与凭证（结果落在 <code>/root/doraemon/submerge.state</code>）。</p>
       </section>
       </div>
 
@@ -1028,6 +1028,9 @@
     ['sb node', '节点配置修改（端口/订阅/SNI/Argo）'],
     ['sb sub', '订阅管理'],
     ['sb report', '上报节点到 sub-merge（自动上报层）'],
+    ['sb report status', '查看上报状态（开关 / 最近一次时间与结果 / 地址 / 凭证）'],
+    ['sb report on', '开启自动上报'],
+    ['sb report off', '关闭自动上报'],
     ['sb del', '卸载（保留二进制）'],
     ['sb delall', '卸载全部并清理'],
     ['sb ups', '更新 sing-box 内核'],
