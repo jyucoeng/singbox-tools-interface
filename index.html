@@ -156,7 +156,21 @@
     .card.locked .lock-box { opacity: .6; }
     input::placeholder { color: var(--sub); opacity: .65; }
     input:disabled { opacity: .4; cursor: not-allowed; }
-    select { font-family: inherit; cursor: pointer; }
+    /* 下拉框：所有平台统一自绘箭头（原生箭头在 iOS/安卓上大小、位置各不一样） */
+    select {
+      font-family: inherit;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      padding: 9px 34px 9px 12px;
+      text-overflow: ellipsis;
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%238b93a7' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px 12px;
+    }
+    select:disabled { opacity: .4; cursor: not-allowed; }
+    select option { background: var(--input-bg); color: var(--ink); }
     .pill {
       display: inline-block; font-size: 11px; padding: 1px 7px; margin-left: 4px;
       border-radius: 6px; border: 1px solid var(--line);
@@ -280,6 +294,7 @@
       .card { padding: 14px; }
       /* iOS Safari 对字号 <16px 的输入框会自动放大整页，点一次弹一次 */
       input[type="text"], select, textarea { font-size: 16px; }
+      select { min-height: 44px; padding: 10px 38px 10px 12px; background-position: right 14px center; }
       /* 速查列表：命令和说明原本挤在同一行（说明被限制在 46% 宽） */
       .crow { flex-wrap: wrap; }
       .crow .cdesc { max-width: 100%; }
