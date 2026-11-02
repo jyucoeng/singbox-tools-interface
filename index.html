@@ -715,7 +715,7 @@
           <span class="li">· 来源：不用设，留空就只上报 <code>default</code>。</span>
           <span class="li">· 不上报的协议：按脚本实际生成的节点形态分（直连 / Argo / CDN 回源），勾上哪个就不报哪个；一个都不勾=全部上报。</span>
           <span class="li">· 也支持前缀写法：命令行或 conf 里填 <code>vless</code> 等于把三种 vless 一起排除，填 <code>trojan</code> 同理。</span>
-          <span class="li">· AnyTLS 目前 sub-merge 侧不解析，勾不勾都不会出现在订阅里。</span>
+          <span class="li">· Socks5 / AnyTLS 也会作为节点进入订阅，客户端不支持时可以直接把它们勾掉。</span>
           <span class="li">· 存储：<code>/root/doraemon/submerge.conf</code>，属主 root、权限 600（换凭证 / 开关上报都会重写并重新设回 600）；<code>submerge.state</code> 记录上报结果，同为 600。</span>
         </p>
         <p class="note lines">
