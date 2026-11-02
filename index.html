@@ -163,6 +163,8 @@
       background: var(--acc-soft); color: var(--acc);
       font-family: ui-monospace, Consolas, monospace; vertical-align: 1px;
     }
+    /* 自动带过来的只读值：看起来像「已填好」而不是灰掉的占位 */
+    input.autofilled { color: var(--ok, #16a34a); font-weight: 600; }
     .req { color: var(--err); font-weight: 700; margin-left: 4px; }
     .warn-org { color: var(--warn); font-weight: 600; }
     .err-banner {
@@ -667,7 +669,7 @@
           </div>
           <div class="row">
             <label>机器名 <span class="pill">自动</span></label>
-            <input type="text" id="report-machine-auto" value="取 ④ 全局配置里的 name" readonly tabindex="-1">
+            <input type="text" id="report-machine-auto" placeholder="④ 里填了 name 就自动带过来" readonly tabindex="-1" title="自动跟随 ④ 全局配置里的 name">
           </div>
           <div class="row">
             <label>来源 <span class="pill">默认空</span></label>
@@ -677,7 +679,7 @@
         <p class="note lines">
           <b>只有 <code>REPORT_FLAG=1</code> 才自动上报</b>
           <span class="li">· 上报地址：填你自己的 sub-merge 域名，必填、无默认值。</span>
-          <span class="li">· 机器名：不用填，自动取 ④ 全局配置里的 <code>name</code>。</span>
+          <span class="li">· 机器名：自动跟随你填的 <code>name</code>（就是 ④ 全局配置里那个），这里会同步显示，不用再填一遍。</span>
           <span class="li">· 来源：不用设，留空就只上报 <code>default</code>。</span>
           <span class="li">· 存储：<code>/root/doraemon/submerge.conf</code>，属主 root、权限 600（换凭证 / 开关上报都会重写并重新设回 600）；<code>submerge.state</code> 记录上报结果，同为 600。</span>
         </p>
@@ -1430,6 +1432,17 @@
     return [];
   }
 
+  // 机器名自动跟随 ④ 全局配置里的 name：那边填什么，这里就显示什么
+  function syncReportMachine() {
+    var el = $id('report-machine-auto');
+    if (!el) return '';
+    var n = (val('name') || '').trim();
+    el.value = n;
+    el.classList.toggle('autofilled', !!n);
+    el.setAttribute('title', n ? '自动跟随 ④ 的 name：' + n : '④ 里填了 name 就自动带过来');
+    return n;
+  }
+
   // 自动上报：只有 REPORT_FLAG=1 才展开并启用下面四个字段
   function syncReport() {
     var on = val('report-flag') === '1';
@@ -1439,6 +1452,7 @@
       var el = $id(id);
       if (el) el.disabled = !on;
     });
+    syncReportMachine();
   }
   // 开了自动上报却没填凭证：装完不会推送，给个黄色提示（不阻断生成）
   function checkReportRequired() {
