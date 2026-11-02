@@ -656,22 +656,22 @@
         <div id="report-params" style="display:none">
           <div class="row">
             <label>服务端地址 <span class="pill">REPORT_BASE</span></label>
-            <input type="text" id="report-base" placeholder="留空默认 https://sub.dingdang.de5.net">
+            <input type="text" id="report-base" placeholder="你自己的 sub-merge 域名，如 https://sub.你的域名（必填）">
           </div>
           <div class="row">
             <label>上报凭证 <span class="pill">REPORT_TOKEN</span></label>
             <input type="text" id="report-token" placeholder="sub-merge 的 REPORT_TOKEN（主订阅 token 会 401）">
           </div>
           <div class="row">
-            <label>机器名 <span class="pill">REPORT_MACHINE</span></label>
-            <input type="text" id="report-machine" placeholder="留空自动用服务器 hostname，如 hk-1">
+            <label>机器名 <span class="pill">自动</span></label>
+            <input type="text" id="report-machine-auto" value="取 ④ 全局配置里的 name" readonly tabindex="-1">
           </div>
           <div class="row">
-            <label>来源 <span class="pill">REPORT_SOURCE</span></label>
-            <input type="text" id="report-source" placeholder="留空用 default；同机多来源可填 airportA">
+            <label>来源 <span class="pill">默认空</span></label>
+            <input type="text" id="report-source-auto" value="不填即默认来源，无需设置" readonly tabindex="-1">
           </div>
         </div>
-        <p class="note">只有 <code>REPORT_FLAG=1</code> 才自动上报；地址 / 凭证 / 机器名 / 来源会落盘到 <code>/root/doraemon/submerge.conf</code>（权限 600），下次不带环境变量也生效。</p>
+        <p class="note">只有 <code>REPORT_FLAG=1</code> 才自动上报。上报地址填你自己的 sub-merge 域名（每个人的不一样，没有默认值）；<b>机器名不用填</b>，脚本自动取 ④ 全局配置里的 <code>name</code>（安装时填的节点名前缀），没填过 name 才退回服务器 hostname；<b>来源也不用设</b>，默认留空即只上报 default 一个来源。地址与凭证会落盘到 <code>/root/doraemon/submerge.conf</code>（权限 600），下次不带环境变量也生效。</p>
         <p class="note">上报只进 sub-merge 的「自动上报」只读层，不动本机手动层；失败只在末尾黄字提示，不会中断安装。装完随时可在服务器用 <code>sb report</code> 手动推一次，用 <code>sb report status</code> 查开关 / 最近一次上报时间与结果 / 目标地址与凭证（结果落在 <code>/root/doraemon/submerge.state</code>）。</p>
       </section>
       </div>
@@ -1192,8 +1192,6 @@
       envs.push(['REPORT_FLAG', "'1'"]);
       strEnv('REPORT_BASE', 'report-base', envs);
       strEnv('REPORT_TOKEN', 'report-token', envs);
-      strEnv('REPORT_MACHINE', 'report-machine', envs);
-      strEnv('REPORT_SOURCE', 'report-source', envs);
     }
     strEnv('reality_private', 'reality_private', envs);
     strEnv('name', 'name', envs);
@@ -1424,7 +1422,7 @@
     var on = val('report-flag') === '1';
     var box = $id('report-params');
     if (box) box.style.display = on ? '' : 'none';
-    ['report-base', 'report-token', 'report-machine', 'report-source'].forEach(function (id) {
+    ['report-base', 'report-token'].forEach(function (id) {
       var el = $id(id);
       if (el) el.disabled = !on;
     });
@@ -1432,16 +1430,25 @@
   // 开了自动上报却没填凭证：装完不会推送，给个黄色提示（不阻断生成）
   function checkReportRequired() {
     if (currentTab() !== 'sb') return [];
-    var el = $id('report-token');
-    if (!el) return [];
-    if (val('report-flag') === '1' && !val('report-token')) {
-      el.classList.add('err');
-      el.setAttribute('title', '已开启自动上报但没填上报凭证：脚本会跳过上报（可在服务器 sb report 里补）');
-      return ['已开启自动上报但未填上报凭证：装完不会推送，可在服务器用 sb report 配置'];
-    }
-    el.classList.remove('err');
-    el.removeAttribute('title');
-    return [];
+    var tok = $id('report-token');
+    var base = $id('report-base');
+    if (!tok || !base) return [];
+    var msg = [];
+    var on = val('report-flag') === '1';
+    var need = [['report-base', base, '上报地址', '已开启自动上报但没填上报地址：脚本会跳过上报'],
+                ['report-token', tok, '上报凭证', '已开启自动上报但没填上报凭证：脚本会跳过上报']];
+    need.forEach(function (n) {
+      var el = n[1];
+      if (on && !val(n[0])) {
+        el.classList.add('err');
+        el.setAttribute('title', n[3] + '（可在服务器 sb report 里补）');
+        msg.push(n[3] + '（可在服务器 sb report 里补）');
+      } else {
+        el.classList.remove('err');
+        el.removeAttribute('title');
+      }
+    });
+    return msg;
   }
 
   function syncNginx() {
