@@ -679,7 +679,7 @@
         <p class="note lines">
           <b>只有 <code>REPORT_FLAG=1</code> 才自动上报</b>
           <span class="li">· 上报地址：填你自己的 sub-merge 域名，必填、无默认值。</span>
-          <span class="li">· 机器名：自动跟随你填的 <code>name</code>（就是 ④ 全局配置里那个），这里会同步显示，不用再填一遍。</span>
+          <span class="li">· 机器名：取值于你填的 <code>name</code>（④ 全局配置里那个），会以 <code>REPORT_MACHINE</code> 一起下发；脚本只在它为空时才回落到 <code>name</code>。</span>
           <span class="li">· 来源：不用设，留空就只上报 <code>default</code>。</span>
           <span class="li">· 存储：<code>/root/doraemon/submerge.conf</code>，属主 root、权限 600（换凭证 / 开关上报都会重写并重新设回 600）；<code>submerge.state</code> 记录上报结果，同为 600。</span>
         </p>
@@ -1207,6 +1207,8 @@
       envs.push(['REPORT_FLAG', "'1'"]);
       strEnv('REPORT_BASE', 'report-base', envs);
       strEnv('REPORT_TOKEN', 'report-token', envs);
+      // 机器名显式带上（值来自 ④ 的 name）；脚本侧仅当它为空时才回落到 name
+      strEnv('REPORT_MACHINE', 'report-machine-auto', envs);
     }
     strEnv('reality_private', 'reality_private', envs);
     strEnv('name', 'name', envs);
