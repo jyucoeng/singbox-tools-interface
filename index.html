@@ -169,7 +169,15 @@
     .exbox .exrow { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 4px 12px; align-items: start; width: 100%; }
     .exbox .exitems { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 12px; align-items: center; }
     .exbox .grp { font-size: 11.5px; color: var(--sub); letter-spacing: .02em; white-space: nowrap; padding-top: 3px; }
-    .exbox label.ck { font-size: 13px; white-space: nowrap; }
+    .exbox label.ck { font-size: 13px; white-space: nowrap; padding: 3px 0; }
+    /* 手机版：标签独占一行，选项排成 2 列，好点也好对齐 */
+    @media (max-width: 700px) {
+      .exbox { gap: 2px; }
+      .exbox .exrow { grid-template-columns: 1fr; gap: 2px; }
+      .exbox .grp { padding-top: 8px; }
+      .exbox .exitems { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; }
+      .exbox label.ck { font-size: 13.5px; }
+    }
     .exbox label.ck { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; }
     .exbox label.ck input { accent-color: var(--acc); cursor: pointer; }
     .exbox label.ck input:disabled { cursor: not-allowed; }
