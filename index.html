@@ -747,7 +747,7 @@
                   <label class="ck"><input type="checkbox" class="report-ex" value="tuic"> TUIC</label>
                   <label class="ck"><input type="checkbox" class="report-ex" value="vless-reality"> VLESS-Reality</label>
                   <label class="ck"><input type="checkbox" class="report-ex" value="anytls"> AnyTLS</label>
-                  <label class="ck"><input type="checkbox" class="report-ex" value="socks5"> Socks5</label>
+                  <label class="ck"><input type="checkbox" class="report-ex" value="socks5" checked> Socks5</label>
                 </div>
               </div>
               <div class="exrow">
@@ -773,7 +773,7 @@
           <span class="li">· 上报地址：填你自己的 sub-merge 域名，必填、无默认值。</span>
           <span class="li">· 机器名：留空即自动跟随 ④ 的 <code>name</code>（也可手填一个不同的名字，手填后不再被覆盖），会以 <code>REPORT_MACHINE</code> 下发；脚本侧仅在它为空时才回落到 <code>name</code>。</span>
           <span class="li">· 来源：不用设，留空就只上报 <code>default</code>。</span>
-          <span class="li">· 不上报的协议：按脚本实际生成的节点形态分（直连 / Argo / CDN 回源），勾上哪个就不报哪个；全都不勾（默认）= 全部上报，不拦截任何协议。</span>
+          <span class="li">· 不上报的协议：按脚本实际生成的节点形态分（直连 / Argo / CDN 回源），勾上哪个就不报哪个（勾选项会以 <code>REPORT_EXCLUDE=…</code> 写进安装命令）；默认勾上 Socks5——多数客户端不吃它，混进订阅只会刷报错。全都不勾 = 全部上报；脚本本身不传这个变量时也不做任何过滤，过滤范围以本页勾选为准。</span>
           <span class="li">· 也支持前缀写法：命令行或 conf 里填 <code>vless</code> 等于把三种 vless 一起排除，填 <code>trojan</code> 同理。</span>
           <span class="li">· Socks5 / AnyTLS 也会作为节点进入订阅，客户端不支持时可以直接把它们勾掉。</span>
           <span class="li">· 存储：<code>/root/doraemon/submerge.conf</code>，属主 root、权限 600（换凭证 / 开关上报都会重写并重新设回 600）；<code>submerge.state</code> 记录上报结果，同为 600。</span>
