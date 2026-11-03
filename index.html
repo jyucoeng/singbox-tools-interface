@@ -773,6 +773,14 @@
           <span class="li">· 上报地址：填你自己的 sub-merge 域名，必填、无默认值。</span>
           <span class="li">· 机器名：留空即自动跟随 ④ 的 <code>name</code>（也可手填一个不同的名字，手填后不再被覆盖），会以 <code>REPORT_MACHINE</code> 下发；脚本侧仅在它为空时才回落到 <code>name</code>。</span>
           <span class="li">· 建议带地区词（<code>hk-1</code> / <code>圣何塞-1</code> / <code>jp-osaka</code>）：sub_merge 从名字里认地区来排默认顺序，认不出来的机器会排到最后，界面上会显示「无地区」。机器名跟节点名是两回事，改它不影响客户端里显示的节点名。</span>
+          <span class="li">· 地区是怎么认的：把机器名按 <code>-</code> <code>_</code> <code>.</code> 空格切开，逐段看，全部段一起打分取最高的那个——
+            <code>圣何塞</code>/<code>香港</code> 这类中文地区词 90 分，<code>SJC</code>/<code>NRT</code>/<code>SJE</code> 这类城市三字码 85 分，
+            <code>USA</code>/<code>JPN</code> 这类 ISO 三字国名 80 分，<strong>不是第一段</strong>的两字国家码 70 分，
+            整串里含中文地区词 60 分，<strong>第一段</strong>的两字国家码只有 45 分。
+            第一段给低分是因为那一段最可能是品牌或编号：<code>dd-us-sje</code> 的 <code>dd</code>、<code>vps-de-1</code> 的 <code>vp</code> 都不是国家，
+            而 <code>my-hk-01</code> 的 <code>my</code> 虽然恰好是马来西亚，也会因为 45 &lt; 70 输给后面的香港。</span>
+          <span class="li">· 想让判定没有歧义，就把国家码放在第一段之后（<code>hk-1</code>、<code>dd-us-sje</code>、<code>圣何塞-us-1</code>），或者干脆用中文地区词。
+            两个都是真国家码时会取靠后的那个（<code>sg-jp-1</code> → 日本）。<code>la-1</code> 这种认成老挝的没办法——<code>LA</code> 确实是 Laos 的国家码，换 <code>lax-1</code> 就行。</span>
           <span class="li">· 来源：不用设，留空就只上报 <code>default</code>。</span>
           <span class="li">· 不上报的协议：按脚本实际生成的节点形态分（直连 / Argo / CDN 回源），勾上哪个就不报哪个（勾选项会以 <code>REPORT_EXCLUDE=…</code> 写进安装命令）；默认勾上 Socks5——多数客户端不吃它，混进订阅只会刷报错。全都不勾 = 全部上报；脚本本身不传这个变量时也不做任何过滤，过滤范围以本页勾选为准。</span>
           <span class="li">· 也支持前缀写法：命令行或 conf 里填 <code>vless</code> 等于把三种 vless 一起排除，填 <code>trojan</code> 同理。</span>
@@ -974,7 +982,7 @@
   <footer>
     本页面仅为 <a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">jyucoeng/singbox-tools</a> 的命令生成辅助界面，脚本功能与版权归原项目所有，仅供学习交流。<br>
     节点上报合并服务：<a href="https://github.com/jyucoeng/sub_merge" target="_blank" rel="noopener">jyucoeng/sub_merge</a>（⑧ 节点上报的接收端，把各机器上报的节点汇总成一份订阅）<br>
-    界面版本 v1.0.9 · 2026-11-03
+    界面版本 v1.0.10 · 2026-11-03
   </footer>
 </div>
 
