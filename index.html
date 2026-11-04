@@ -59,6 +59,9 @@
        keep-all 禁止在中文之间随意断（否则浏览器会把「命令生成器」切成「…生/成器」），
        overflow-wrap 兜底，万一某一段本身比容器还宽也不会溢出。 */
     header h1 {
+      /* header 是 flex column + align-items:center，h1 会按 max-content 撑开
+         而不肯收缩，窄屏就顶出容器、文字也不折行。给个上限让它知道边界。 */
+      max-width: 100%;
       font-size: clamp(20px, 3vw, 34px);
       margin: 0 0 8px;
       text-align: center;
@@ -68,6 +71,28 @@
     /* keep-all 只管 CJK，emoji 仍会被当成可断点，于是 🧰 会掉到下一行行首。
        把「脚本工具箱🧰」整体锁成不可分，断行只发生在后面的 <wbr>。 */
     header h1 .nb { white-space: nowrap; }
+    /* 版本号做成标题右侧的小方框：跟着标题缩放，不参与断行 */
+    header h1 .ver {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 1px 9px;
+      font-size: clamp(11px, 1.4vw, 14px);
+      font-weight: 600;
+      letter-spacing: .02em;
+      line-height: 1.6;
+      color: var(--acc);
+      background: var(--acc-soft);
+      border: 1px solid var(--acc);
+      border-radius: 7px;
+      white-space: nowrap;
+      vertical-align: middle;
+      transform: translateY(-3px);
+    }
+    /* 窄屏标题会折行，版本号跟着挤到行尾还会溢出，改成标题下方单独一行 */
+    @media (max-width: 560px) {
+      header h1 { word-break: normal; }
+      header h1 .ver { display: block; width: fit-content; margin: 7px auto 0; transform: none; }
+    }
     header p { margin: 0; font-size: 14px; color: var(--sub); line-height: 1.7; text-align: center; }
     .theme-btn {
       position: absolute; top: 0; right: 0;
@@ -348,7 +373,7 @@
 
   <header>
     <button id="theme-btn" class="theme-btn" title="切换深色/浅色模式">☀️</button>
-    <h1>Singbox-Tools <span class="nb">脚本工具箱🧰</span><wbr /> 一键SSH命令生成器</h1>
+    <h1>Singbox-Tools <span class="nb">脚本工具箱🧰</span><wbr /> 一键SSH命令生成器 <span class="ver">v1.0.11</span></h1>
     <p>
       项目地址：<a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">github.com/jyucoeng/singbox-tools</a>
       　|　其他命令查询：<a href="https://pkg.tbbbk.com/" target="_blank" rel="noopener">pkg.tbbbk.com（Linux 应用安装器 · 180+ 应用一键安装命令）</a>
@@ -982,7 +1007,7 @@
   <footer>
     本页面仅为 <a href="https://github.com/jyucoeng/singbox-tools" target="_blank" rel="noopener">jyucoeng/singbox-tools</a> 的命令生成辅助界面，脚本功能与版权归原项目所有，仅供学习交流。<br>
     节点上报合并服务：<a href="https://github.com/jyucoeng/sub_merge" target="_blank" rel="noopener">jyucoeng/sub_merge</a>（⑧ 节点上报的接收端，把各机器上报的节点汇总成一份订阅）<br>
-    界面版本 v1.0.10 · 2026-11-03
+    更新于 2026-11-04
   </footer>
 </div>
 
