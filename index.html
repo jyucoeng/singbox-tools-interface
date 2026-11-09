@@ -659,6 +659,14 @@
             <button type="button" class="mini" id="gen-reality">生成</button>
           </div>
         </div>
+        <div class="row">
+          <label>系统自动优化 <span class="pill">OS_TUNE_ON_INSTALL</span></label>
+          <select id="os-tune-on">
+            <option value="">默认 开启（装完自动跑 vps-tune）</option>
+            <option value="0">不开启（跳过系统优化）</option>
+          </select>
+        </div>
+        <p class="note">开启后安装结束会自动调用 <a href="https://github.com/jyucoeng/vps-tune" target="_blank" rel="noopener">vps-tune</a>（自动识别 Alpine / Debian / Ubuntu）调内核参数与 BBR，<b>默认不改 SSH 登录策略</b>，失败不阻断安装。选「不开启」时命令里会带上 <code>OS_TUNE_ON_INSTALL=0</code>。</p>
       </section>
 
       <section class="card">
@@ -1254,6 +1262,8 @@
     var envs = [];
     strEnv('uuid', 'uuid', envs);
     numEnv('ippz', 'ippz', envs);
+    // 系统自动优化：默认开（sb.sh 里 OS_TUNE_ON_INSTALL 缺省为 1），只有显式关掉才下发
+    if (val('os-tune-on') === '0') envs.push(['OS_TUNE_ON_INSTALL', '0']);
     strEnv('out_ip', 'out_ip', envs);
     // 域名替代 IP 显示（direct_host）：
     //   - 开关=启用 且 输入为空 → 不检测、不写入
