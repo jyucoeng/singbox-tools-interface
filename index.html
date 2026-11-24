@@ -1004,9 +1004,9 @@
             <option value="multi">多行（每行一个变量，便于核对）</option>
           </select>
         </label>
-        <button id="parse-now" class="ghost" type="button" title="把命令框里（或剪贴板里）的命令解析成上面的设置">🔍 反推设置</button>
         <button id="copy" class="primary" type="button">📋 复制命令</button>
         <button id="reset" class="ghost" type="button">♻️ 重置表单</button>
+        <button id="parse-now" class="ghost" type="button" title="把命令框里（或剪贴板里）的命令解析成上面的设置">📥 粘贴命令 → 反推回填</button>
       </div>
       <textarea id="cmd" spellcheck="false" placeholder="在上方设置好之后，这里会自动生成命令；
 也可以把外部准备好的命令直接粘贴到这里（Ctrl/⌘+V），界面会自动反推出所有设置。"></textarea>
@@ -2316,7 +2316,7 @@
   $id('cmd').addEventListener('focus', function () {
     if (!LAST_GEN) LAST_GEN = $id('cmd').value;
     if (Date.now() < NOTE_ERR_UNTIL) { flashNote(NOTE_ERR_MSG, true); return; }
-    flashNote('可直接粘贴外部命令（Ctrl/⌘+V），粘贴完会自动按命令反推回填上面的全部设置；也可以先贴进来再点工具条的「🔍 反推设置」。', false);
+    flashNote('可直接粘贴外部命令（Ctrl/⌘+V），粘贴完会自动按命令反推回填上面的全部设置；也可以先贴进来再点工具条最后的「📥 粘贴命令 → 反推回填」。', false);
   });
   $id('cmd').addEventListener('blur', function () {
     var v = $id('cmd').value.trim();
@@ -2329,9 +2329,17 @@
   var parseBtn = $id('parse-now');
   if (parseBtn) parseBtn.addEventListener('click', function () {
     var cur = ($id('cmd').value || '').trim();
-    if (!cur) { flashNote('命令框是空的：先把外部命令粘进来（Ctrl/⌘+V），再点「🔍 反推设置」。', true); focusCmd(); return; }
-    if (cur === LAST_GEN) { flashNote('命令框里就是当前设置生成的命令，已经是最新状态；要导入外部命令，直接把它粘进框里即可（粘完会自动反推）。', false); return; }
-    if (!applyPastedCommand(cur)) flashNote('⚠️ 框里的内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)），当前设置未改动。', true);
+    if (cur && cur !== LAST_GEN) {
+      if (!applyPastedCommand(cur)) flashNote('⚠️ 框里的内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)），当前设置未改动。', true);
+      return;
+    }
+    // 框里还是当前生成的命令（或为空）→ 试着读剪贴板
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then(function (txt) {
+        if (!txt || !txt.trim()) { flashNote('命令框和剪贴板都是空的：先把外部命令复制下来，再点这个按钮。', true); focusCmd(); return; }
+        if (!applyPastedCommand(txt)) flashNote('⚠️ 剪贴板里的内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)）。', true);
+      }).catch(function () { flashNote('浏览器拦下了读取剪贴板：请先把命令直接粘进下方命令框，再点「📥 粘贴命令 → 反推回填」。', true); focusCmd(); });
+    } else { flashNote('当前浏览器不支持读取剪贴板：请先把命令贴进下方命令框，再点「📥 粘贴命令 → 反推回填」。', true); focusCmd(); }
   });
 
   /* ---------------- 主题 ---------------- */
