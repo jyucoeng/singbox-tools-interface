@@ -12,7 +12,7 @@
 - **📤 节点上报（sub-merge，REPORT_FLAG）**：可勾选「自动上报」，填自己的服务端地址与上报凭证 REPORT_TOKEN，生成带 `REPORT_FLAG='1' REPORT_BASE=… REPORT_TOKEN=…` 的安装命令；默认关闭，不勾就完全不生成相关变量。上报地址没有默认值（每个人的 sub-merge 域名不同）；机器名留空即自动跟随 ④ 全局配置里的 `name`（也可以手填一个不同的名字，手填后不再被覆盖）；来源默认空。地址与凭证落盘到服务器的 `/root/doraemon/submerge.conf`（root:root、600，每次改写都会重设回 600），之后 `sb report` 可手动再推一次、`sb report status` 查上报状态。
 - **✈️ MTProxy 新版（mtp-new.sh）**：交互菜单 / Go 版 / Telemt 高性能版三种安装模式，配额、到期、限速、重置日参数，Telemt 多用户管理命令（adduser / users / getuser / moduser / deluser）实时生成，32 位 hex 密钥一键生成。
 - 全部端口输入框支持 🎲 一键随机端口；UUID / Socks5 密码 / Reality 私钥 / Telemt 密钥支持一键随机生成（Reality 私钥采用与脚本 `gen_reality_private()` 相同的 base64(32 字节) 算法）。
-- **📥 命令反推回填（粘贴即还原）**：把外部准备好的命令直接粘进下方命令框（单行 / 多行、带 `# ⚠️` 提示行、curl 或 wget 均可），界面会自动识别脚本（sb.sh / mtp-new.sh）、全部 `KEY='value'` 变量和末尾动作（rep / ins / list key / adduser …），把左侧每项设置按命令还原，再按回填结果重新生成命令；也可点「📥 粘贴并回填」直接读剪贴板。
+- **📥 命令反推回填（粘贴即还原）**：把外部准备好的命令直接粘进下方命令框（单行 / 多行、带 `# ⚠️` 提示行、curl 或 wget 均可），界面会自动识别脚本（sb.sh / mtp-new.sh）、全部 `KEY='value'` 变量和末尾动作（rep / ins / list key / adduser …），把左侧每项设置按命令还原，再按回填结果重新生成命令；工具条上另有「🔍 反推设置」按钮：按命令框里的内容再解析一次（粘贴被浏览器拦下、或从别处拖文本进来时用它）；框里还是当前生成的命令时会提示「已经是最新状态」。
 - 深色 / 浅色主题切换（本地记忆），curl / wget 双下载方式，一键复制。
 
 ## 文件说明

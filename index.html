@@ -1004,11 +1004,11 @@
             <option value="multi">多行（每行一个变量，便于核对）</option>
           </select>
         </label>
-        <button id="paste-parse" class="ghost" type="button">📥 粘贴并回填</button>
+        <button id="parse-now" class="ghost" type="button" title="把命令框里（或剪贴板里）的命令解析成上面的设置">🔍 反推设置</button>
         <button id="copy" class="primary" type="button">📋 复制命令</button>
         <button id="reset" class="ghost" type="button">♻️ 重置表单</button>
       </div>
-      <textarea id="cmd" spellcheck="false" placeholder="在左侧设置后这里会自动生成命令；
+      <textarea id="cmd" spellcheck="false" placeholder="在上方设置好之后，这里会自动生成命令；
 也可以把外部准备好的命令直接粘贴到这里（Ctrl/⌘+V），界面会自动反推出所有设置。"></textarea>
       <p class="hint" id="paste-note" style="display:none"></p>
       <p class="hint">提示：命令框可直接粘贴外部命令（<code>KEY='value' … bash &lt;(curl -Ls …) rep</code>），粘贴后上面的全部设置会按命令反推回填；<b>单行</b>模式下整条命令只有一行，即使终端把换行吃掉也不会断（FinalShell 等推荐）；<b>多行</b>模式每行一个变量便于核对，但粘贴时若终端吞换行，行尾的 <code>\</code> 会失效导致命令报错。字符串值已按脚本要求使用英文单引号包裹，含特殊字符的密码也不会被截断。</p>
@@ -1911,6 +1911,8 @@
   var LAST_GEN = '';
   var APPLY_FAIL = [];
   var NOTE_TIMER = null;
+  var NOTE_ERR_UNTIL = 0;
+  var NOTE_ERR_MSG = '';
   function flashNote(msg, isErr) {
     var el = $id('paste-note');
     if (!el) return;
@@ -1919,6 +1921,8 @@
     el.style.color = isErr ? '#ff8f8f' : '#7ee787';
     if (NOTE_TIMER) clearTimeout(NOTE_TIMER);
     NOTE_TIMER = setTimeout(function () { el.style.display = 'none'; }, isErr ? 10000 : 14000);
+    // 报错提示 4 秒内不被“聚焦提示”覆盖（例如点了按钮又被 focusCmd 抢走文案）
+    if (isErr) { NOTE_ERR_UNTIL = Date.now() + 4000; NOTE_ERR_MSG = msg; }
   }
 
   // 把一条命令拆成 token：KEY='v' / KEY="v" / KEY=v / <(curl ...) / 裸词
@@ -2311,7 +2315,8 @@
   });
   $id('cmd').addEventListener('focus', function () {
     if (!LAST_GEN) LAST_GEN = $id('cmd').value;
-    flashNote('可以直接粘贴外部命令（Ctrl/⌘+V），松开手就会按命令反推回填左侧全部设置。', false);
+    if (Date.now() < NOTE_ERR_UNTIL) { flashNote(NOTE_ERR_MSG, true); return; }
+    flashNote('可直接粘贴外部命令（Ctrl/⌘+V），粘贴完会自动按命令反推回填上面的全部设置；也可以先贴进来再点工具条的「🔍 反推设置」。', false);
   });
   $id('cmd').addEventListener('blur', function () {
     var v = $id('cmd').value.trim();
@@ -2321,14 +2326,12 @@
       flashNote('⚠️ 这段内容里没有可识别的 KEY=… 或 bash <(curl …)，已还原成当前设置生成的命令。', true);
     }
   });
-  var pasteBtn = $id('paste-parse');
-  if (pasteBtn) pasteBtn.addEventListener('click', function () {
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      navigator.clipboard.readText().then(function (txt) {
-        if (!txt || !txt.trim()) { flashNote('剪贴板是空的：请点下方命令框后按 Ctrl/⌘+V 粘贴。', true); focusCmd(); return; }
-        if (!applyPastedCommand(txt)) flashNote('⚠️ 剪贴板内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)）。', true);
-      }).catch(function () { flashNote('浏览器拒绝了读取剪贴板：请点下方命令框后按 Ctrl/⌘+V 粘贴。', true); focusCmd(); });
-    } else { flashNote('当前浏览器不支持读取剪贴板：请点下方命令框后按 Ctrl/⌘+V 粘贴。', true); focusCmd(); }
+  var parseBtn = $id('parse-now');
+  if (parseBtn) parseBtn.addEventListener('click', function () {
+    var cur = ($id('cmd').value || '').trim();
+    if (!cur) { flashNote('命令框是空的：先把外部命令粘进来（Ctrl/⌘+V），再点「🔍 反推设置」。', true); focusCmd(); return; }
+    if (cur === LAST_GEN) { flashNote('命令框里就是当前设置生成的命令，已经是最新状态；要导入外部命令，直接把它粘进框里即可（粘完会自动反推）。', false); return; }
+    if (!applyPastedCommand(cur)) flashNote('⚠️ 框里的内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)），当前设置未改动。', true);
   });
 
   /* ---------------- 主题 ---------------- */
