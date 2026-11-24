@@ -2333,13 +2333,30 @@
       if (!applyPastedCommand(cur)) flashNote('⚠️ 框里的内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)），当前设置未改动。', true);
       return;
     }
-    // 框里还是当前生成的命令（或为空）→ 试着读剪贴板
+    // 框里还是当前生成的命令（或为空）→ 试着读剪贴板；1.2 秒没结果就走手动路径，避免点了没反应
     if (navigator.clipboard && navigator.clipboard.readText) {
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) return;
+        done = true;
+        flashNote('没读到剪贴板（浏览器在等你允许读取）：请直接在命令框里按 Ctrl/⌘+V 粘贴，粘完会自动反推。', true);
+        focusCmd();
+      }, 1200);
       navigator.clipboard.readText().then(function (txt) {
-        if (!txt || !txt.trim()) { flashNote('命令框和剪贴板都是空的：先把外部命令复制下来，再点这个按钮。', true); focusCmd(); return; }
+        if (done) return;
+        done = true; clearTimeout(timer);
+        if (!txt || !txt.trim()) { flashNote('剪贴板是空的：先把外部命令复制下来，再点这个按钮。', true); focusCmd(); return; }
         if (!applyPastedCommand(txt)) flashNote('⚠️ 剪贴板里的内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)）。', true);
-      }).catch(function () { flashNote('浏览器拦下了读取剪贴板：请先把命令直接粘进下方命令框，再点「📥 粘贴命令 → 反推回填」。', true); focusCmd(); });
-    } else { flashNote('当前浏览器不支持读取剪贴板：请先把命令贴进下方命令框，再点「📥 粘贴命令 → 反推回填」。', true); focusCmd(); }
+      }).catch(function () {
+        if (done) return;
+        done = true; clearTimeout(timer);
+        flashNote('浏览器拦下了读取剪贴板：请直接在命令框里按 Ctrl/⌘+V 粘贴，粘完会自动反推。', true);
+        focusCmd();
+      });
+    } else {
+      flashNote('当前浏览器不支持读取剪贴板：请直接在命令框里按 Ctrl/⌘+V 粘贴，粘完会自动反推。', true);
+      focusCmd();
+    }
   });
 
   /* ---------------- 主题 ---------------- */
