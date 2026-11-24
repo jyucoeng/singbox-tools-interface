@@ -407,28 +407,28 @@
         <div class="row" id="row-hy-sni" style="display:none">
           <label>Hysteria2 SNI <span class="pill">hy_sni</span></label>
           <div class="ctl">
-            <input type="text" id="hy_sni" placeholder="留空默认 www.apple.com，或右侧选择">
+            <input type="text" id="hy_sni" placeholder="留空默认 www.nazhumi.com，或右侧选择">
             <select class="sni-pick" data-target="hy_sni"><option value="">选择…</option></select>
           </div>
         </div>
         <div class="row" id="row-vl-sni" style="display:none">
           <label>Vless SNI <span class="pill">vl_sni</span></label>
           <div class="ctl">
-            <input type="text" id="vl_sni" placeholder="留空默认 www.apple.com（Vless-Reality）">
+            <input type="text" id="vl_sni" placeholder="留空默认 www.nazhumi.com（Vless-Reality）">
             <select class="sni-pick" data-target="vl_sni"><option value="">选择…</option></select>
           </div>
         </div>
         <div class="row" id="row-tu-sni" style="display:none">
           <label>Tuic SNI <span class="pill">tu_sni</span></label>
           <div class="ctl">
-            <input type="text" id="tu_sni" placeholder="留空默认 www.apple.com，或右侧选择">
+            <input type="text" id="tu_sni" placeholder="留空默认 www.nazhumi.com，或右侧选择">
             <select class="sni-pick" data-target="tu_sni"><option value="">选择…</option></select>
           </div>
         </div>
         <div class="row" id="row-any-sni" style="display:none">
           <label>AnyTLS SNI <span class="pill">any_sni</span></label>
           <div class="ctl">
-            <input type="text" id="any_sni" placeholder="留空默认 www.apple.com，或右侧选择">
+            <input type="text" id="any_sni" placeholder="留空默认 www.nazhumi.com，或右侧选择">
             <select class="sni-pick" data-target="any_sni"><option value="">选择…</option></select>
           </div>
         </div>
@@ -2011,7 +2011,7 @@
   });
 
   // SNI 伪装域名候选列表（下拉可反复选择，输入框仍可手输）
-  var SNI_LIST = ['www.ua.edu', 'www.yahoo.com', 'www.apple.com', 'dl.google.com'];
+  var SNI_LIST = ['www.nazhumi.com', 'www.ua.edu', 'www.yahoo.com', 'dl.google.com'];
   document.querySelectorAll('select.sni-pick').forEach(function (sel) {
     SNI_LIST.forEach(function (d) {
       var o = document.createElement('option');
