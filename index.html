@@ -1004,11 +1004,14 @@
             <option value="multi">多行（每行一个变量，便于核对）</option>
           </select>
         </label>
+        <button id="paste-parse" class="ghost" type="button">📥 粘贴并回填</button>
         <button id="copy" class="primary" type="button">📋 复制命令</button>
         <button id="reset" class="ghost" type="button">♻️ 重置表单</button>
       </div>
-      <textarea id="cmd" readonly spellcheck="false"></textarea>
-      <p class="hint">提示：<b>单行</b>模式下整条命令只有一行，即使终端把换行吃掉也不会断（FinalShell 等推荐）；<b>多行</b>模式每行一个变量便于核对，但粘贴时若终端吞换行，行尾的 <code>\</code> 会失效导致命令报错。字符串值已按脚本要求使用英文单引号包裹，含特殊字符的密码也不会被截断。</p>
+      <textarea id="cmd" spellcheck="false" placeholder="在左侧设置后这里会自动生成命令；
+也可以把外部准备好的命令直接粘贴到这里（Ctrl/⌘+V），界面会自动反推出所有设置。"></textarea>
+      <p class="hint" id="paste-note" style="display:none"></p>
+      <p class="hint">提示：命令框可直接粘贴外部命令（<code>KEY='value' … bash &lt;(curl -Ls …) rep</code>），粘贴后上面的全部设置会按命令反推回填；<b>单行</b>模式下整条命令只有一行，即使终端把换行吃掉也不会断（FinalShell 等推荐）；<b>多行</b>模式每行一个变量便于核对，但粘贴时若终端吞换行，行尾的 <code>\</code> 会失效导致命令报错。字符串值已按脚本要求使用英文单引号包裹，含特殊字符的密码也不会被截断。</p>
     </section>
   </div>
 
@@ -1889,6 +1892,7 @@
       arr.forEach(function (c) { warnList.push(c); });
     });
     $id('cmd').value = withWarn(currentTab() === 'sb' ? buildSb() : buildMtpNew(), warnList);
+    LAST_GEN = $id('cmd').value;
     var mo = $id('mg-out');
     mo.value = withWarn(buildMg(), warnList);
     autoGrow(mo);
@@ -1901,6 +1905,319 @@
     if (dhBad.length) uiError(dhBad.join('；'));
     setGlobalErr(UI_ERRORS);
     renumberCards();
+  }
+
+  /* ---------------- 反向解析：把外部命令粘贴回来 → 反推回填表单 ---------------- */
+  var LAST_GEN = '';
+  var APPLY_FAIL = [];
+  var NOTE_TIMER = null;
+  function flashNote(msg, isErr) {
+    var el = $id('paste-note');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = '';
+    el.style.color = isErr ? '#ff8f8f' : '#7ee787';
+    if (NOTE_TIMER) clearTimeout(NOTE_TIMER);
+    NOTE_TIMER = setTimeout(function () { el.style.display = 'none'; }, isErr ? 10000 : 14000);
+  }
+
+  // 把一条命令拆成 token：KEY='v' / KEY="v" / KEY=v / <(curl ...) / 裸词
+  function tokenizeCmd(src) {
+    var out = [], i = 0, n = src.length, c, m, v, w, start, depth;
+    while (i < n) {
+      c = src.charAt(i);
+      if (c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '\\') { i++; continue; }
+      if (c === '#') { while (i < n && src.charAt(i) !== '\n') i++; continue; }
+      if (c === '<' && src.charAt(i + 1) === '(') {
+        start = i; depth = 0;
+        while (i < n) {
+          c = src.charAt(i);
+          if (c === "'") { i++; while (i < n && src.charAt(i) !== "'") i++; i++; continue; }
+          if (c === '"') { i++; while (i < n && src.charAt(i) !== '"') i++; i++; continue; }
+          if (c === '(') depth++;
+          else if (c === ')') { depth--; if (depth === 0) { i++; break; } }
+          i++;
+        }
+        out.push(src.slice(start, i));
+        continue;
+      }
+      m = /^([A-Za-z_][A-Za-z0-9_]*)=/.exec(src.slice(i, i + 96));
+      if (m) {
+        i += m[0].length; v = '';
+        if (src.charAt(i) === "'") {
+          i++;
+          while (i < n) {
+            if (src.charAt(i) === "'") {
+              // qv() 生成的 '\'' 转义
+              if (src.charAt(i + 1) === '\\' && src.charAt(i + 2) === "'" && src.charAt(i + 3) === "'") { v += "'"; i += 4; continue; }
+              i++; break;
+            }
+            v += src.charAt(i); i++;
+          }
+        } else if (src.charAt(i) === '"') {
+          i++;
+          while (i < n) {
+            c = src.charAt(i);
+            if (c === '\\' && (src.charAt(i + 1) === '"' || src.charAt(i + 1) === '\\')) { v += src.charAt(i + 1); i += 2; continue; }
+            if (c === '"') { i++; break; }
+            v += c; i++;
+          }
+        } else {
+          while (i < n && !/[\s\\]/.test(src.charAt(i))) { v += src.charAt(i); i++; }
+        }
+        out.push({ k: m[1], v: v });
+        continue;
+      }
+      w = '';
+      while (i < n && !/[\s]/.test(src.charAt(i))) { w += src.charAt(i); i++; }
+      out.push(w);
+    }
+    return out;
+  }
+
+  function parseCmdText(text) {
+    var raw = String(text || '').replace(/\r\n?/g, '\n').replace(/^\uFEFF/, '');
+    var toks = tokenizeCmd(raw);
+    var env = {}, keys = [], words = [];
+    toks.forEach(function (t) {
+      if (t && typeof t === 'object') { env[t.k.toUpperCase()] = t.v; keys.push(t.k); }
+      else if (t) words.push(t);
+    });
+    var tail = words.filter(function (w) {
+      return w !== 'bash' && w !== 'sh' && w !== 'sudo' && w.indexOf('<(') !== 0 && w.indexOf('=') < 0;
+    }).join(' ');
+    var script = '';
+    if (/mtp-new\.sh/.test(raw)) script = 'mtpnew';
+    else if (/sb0*\.sh/.test(raw)) script = 'sb';
+    if (!script && keys.length) {
+      script = (env.PORT || env.DOMAIN || env.TELEMT_USER || env.INSTALL_MODE || env.SECRET || env.IP_MODE) ? 'mtpnew' : 'sb';
+    }
+    return { env: env, keys: keys, tail: tail, script: script, raw: raw };
+  }
+
+  var SB_FORM_IDS = ['hypt', 'vlrt', 'tupt', 'anypt', 'hy_sni', 'vl_sni', 'tu_sni', 'any_sni',
+    'argo-on', 'argo-vmess', 'argo-vless', 'argo-trojan', 'argo-mode', 'argo_cf_host', 'argo_cf_pt',
+    'argo_vmess_cf_host', 'argo_vmess_cf_pt', 'argo_vless_cf_host', 'argo_vless_cf_pt',
+    'argo_trojan_cf_host', 'argo_trojan_cf_pt', 'tunnel-type', 'agn', 'agk', 'argo_pt',
+    'ws-cdn-on', 'ws-cdn-vmess', 'ws-cdn-vless', 'ws-cdn-trojan', 'ws-cdn-mode',
+    'ws_cdn_vmess_cf_host', 'ws_cdn_vmess_sni', 'ws_cdn_vmess_cf_pt',
+    'ws_cdn_vless_cf_host', 'ws_cdn_vless_sni', 'ws_cdn_vless_cf_pt',
+    'ws_cdn_trojan_cf_host', 'ws_cdn_trojan_sni', 'ws_cdn_trojan_cf_pt',
+    'ws_cdn_cf_host', 'ws_cdn_sni', 'ws_cdn_cf_pt',
+    'uuid', 'name', 'ippz', 'out_ip', 'direct-host-on', 'direct_host', 'reality_private', 'os-tune-on',
+    'socks5-on', 'socks5pt', 'socks5-username', 'socks5-password', 'socks5-wl', 'socks5-ips',
+    'sb-tail', 'subscribe', 'nginx_pt', 'report-flag', 'report-base', 'report-token', 'report-machine-auto'];
+  var MTP_FORM_IDS = ['mtpn-mode', 'mtpn-port', 'mtpn-domain', 'mtpn-ipmode', 'mtpn-secret', 'mtpn-user',
+    'mtpn-quota', 'mtpn-expire', 'mtpn-sup', 'mtpn-sdn', 'mtpn-reset', 'mtpn-tail',
+    'mg-ready', 'mg-cmd', 'mg-user', 'mg-quota', 'mg-expire', 'mg-port', 'mg-secret', 'mg-out'];
+  var DEFAULTS = {};
+  function captureDefaults() {
+    SB_FORM_IDS.concat(MTP_FORM_IDS).forEach(function (id) {
+      var el = $id(id);
+      if (!el) return;
+      DEFAULTS[id] = { v: el.value, c: !!el.checked };
+    });
+  }
+  function resetForm(tab) {
+    (tab === 'sb' ? SB_FORM_IDS : MTP_FORM_IDS).forEach(function (id) {
+      var el = $id(id), d = DEFAULTS[id];
+      if (!el || !d) return;
+      if (el.type === 'checkbox' || el.type === 'radio') el.checked = d.c;
+      else el.value = d.v;
+    });
+  }
+  function switchTab(t) {
+    document.querySelectorAll('.tab').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === t);
+    });
+    document.querySelectorAll('.tabpane').forEach(function (p) {
+      p.classList.toggle('active', p.id === 'tab-' + t);
+    });
+    var os = $id('out-script');
+    if (os && SCRIPT_NAMES[t]) os.textContent = SCRIPT_NAMES[t];
+  }
+
+  function applySb(p) {
+    var e = p.env, n = 0;
+    function put(id, v) {
+      if (v == null || v === '') return;
+      var el = $id(id);
+      if (!el) { APPLY_FAIL.push(id); return; }
+      el.value = v;
+      if (el.tagName === 'SELECT' && el.value !== v) {
+        // 下拉框选项里没有这个值：忽略大小写再试一次，仍不行就记下来（例如 ippz=20500 这类环境变量语义已变的值）
+        var hit = null;
+        [].forEach.call(el.options, function (o) {
+          if (hit === null && String(o.value).toLowerCase() === String(v).toLowerCase()) hit = o.value;
+        });
+        if (hit === null) { APPLY_FAIL.push(id + '=' + v); return; }
+        el.value = hit;
+      }
+      n++;
+    }
+    function on(id, val) {
+      var el = $id(id);
+      if (!el) return;
+      el.checked = !!val; n++;
+    }
+    // 1) 开关先行：sync* 会按开关清空/禁用字段，顺序反了会被吃掉
+    if (e.SOCKS5PT || e.SOCKS5_USERNAME || e.SOCKS5_PASSWORD || e.SOCKS5_IPS || e.SOCKS5_WL_FLAG) put('socks5-on', 'on');
+    if (e.DIRECT_HOST) put('direct-host-on', 'on');
+    if (e.DIRECT_HOST_ON) put('direct-host-on', e.DIRECT_HOST_ON === 'on' ? 'on' : '');
+    if (e.REPORT_FLAG) put('report-flag', e.REPORT_FLAG === '1' ? '1' : '');
+    if (e.OS_TUNE_ON_INSTALL) put('os-tune-on', String(e.OS_TUNE_ON_INSTALL) === '0' ? '0' : '');
+    if (e.OS_TUNE) put('os-tune-on', String(e.OS_TUNE) === '0' ? '0' : '');
+    if (e.AGN || e.AGK || e.TUNNEL_TYPE === 'fixed') put('tunnel-type', 'fixed');
+    else if (e.TUNNEL_TYPE) put('tunnel-type', 'tmp');
+
+    // 2) Argo：列表 → 勾选框；分开/统一模式；专属字段
+    var argo = (e.ARGO || '').split(',').filter(function (x) { return !!x; });
+    var argoSep = e.ARGO_MODE === 'separate' || !!(e.ARGO_VMESS_CF_HOST || e.ARGO_VMESS_CF_PT || e.ARGO_VLESS_CF_HOST || e.ARGO_VLESS_CF_PT || e.ARGO_TROJAN_CF_HOST || e.ARGO_TROJAN_CF_PT);
+    if (argo.length || argoSep || e.ARGO_CF_HOST || e.ARGO_CF_PT || e.AGN || e.AGK || e.ARGO_PT) {
+      put('argo-on', 'on');
+      put('argo-mode', argoSep ? 'separate' : 'shared');
+      argo.forEach(function (x) { on('argo-' + x, true); });
+      ['vmess', 'vless', 'trojan'].forEach(function (x) {
+        var U = x.toUpperCase();
+        if (e['ARGO_' + U + '_CF_HOST'] || e['ARGO_' + U + '_CF_PT']) on('argo-' + x, true);
+      });
+    }
+    put('argo_cf_host', e.ARGO_CF_HOST);
+    put('argo_cf_pt', e.ARGO_CF_PT);
+    put('agn', e.AGN);
+    put('agk', e.AGK);
+    put('argo_pt', e.ARGO_PT);
+    ['vmess', 'vless', 'trojan'].forEach(function (x) {
+      var U = x.toUpperCase();
+      put('argo_' + x + '_cf_host', e['ARGO_' + U + '_CF_HOST']);
+      put('argo_' + x + '_cf_pt', e['ARGO_' + U + '_CF_PT']);
+    });
+
+    // 3) WS-CDN
+    var ws = (e.WS_CDN || '').split(',').filter(function (x) { return !!x; });
+    var wsSep = e.WS_CDN_MODE === 'separate' || !!(e.WS_CDN_VMESS_CF_HOST || e.WS_CDN_VMESS_CF_PT || e.WS_CDN_VLESS_CF_HOST || e.WS_CDN_VLESS_CF_PT || e.WS_CDN_TROJAN_CF_HOST || e.WS_CDN_TROJAN_CF_PT);
+    if (ws.length || wsSep || e.WS_CDN_CF_HOST || e.WS_CDN_SNI || e.WS_CDN_CF_PT) {
+      put('ws-cdn-on', 'on');
+      put('ws-cdn-mode', wsSep ? 'separate' : 'shared');
+      ws.forEach(function (x) { on('ws-cdn-' + x, true); });
+      ['vmess', 'vless', 'trojan'].forEach(function (x) {
+        var U = x.toUpperCase();
+        if (e['WS_CDN_' + U + '_CF_HOST'] || e['WS_CDN_' + U + '_CF_PT'] || e['WS_CDN_' + U + '_SNI']) on('ws-cdn-' + x, true);
+      });
+    }
+    put('ws_cdn_cf_host', e.WS_CDN_CF_HOST);
+    put('ws_cdn_sni', e.WS_CDN_SNI);
+    put('ws_cdn_cf_pt', e.WS_CDN_CF_PT);
+    ['vmess', 'vless', 'trojan'].forEach(function (x) {
+      var U = x.toUpperCase();
+      put('ws_cdn_' + x + '_cf_host', e['WS_CDN_' + U + '_CF_HOST']);
+      put('ws_cdn_' + x + '_sni', e['WS_CDN_' + U + '_SNI']);
+      put('ws_cdn_' + x + '_cf_pt', e['WS_CDN_' + U + '_CF_PT']);
+    });
+
+    // 4) 端口 → 再 SNI（syncSniByPort 会清掉端口为空的 SNI 行）
+    ['hypt', 'vlrt', 'tupt', 'anypt'].forEach(function (k) { put(k, e[k.toUpperCase()]); });
+    put('hy_sni', e.HY_SNI);
+    put('vl_sni', e.VL_SNI);
+    put('tu_sni', e.TU_SNI);
+    put('any_sni', e.ANY_SNI);
+
+    // 5) 其余标量
+    put('uuid', e.UUID);
+    put('name', e.NAME);
+    put('ippz', e.IPPZ);
+    put('out_ip', e.OUT_IP);
+    put('direct_host', e.DIRECT_HOST);
+    put('reality_private', e.REALITY_PRIVATE);
+    put('socks5pt', e.SOCKS5PT);
+    put('socks5-username', e.SOCKS5_USERNAME);
+    put('socks5-password', e.SOCKS5_PASSWORD);
+    if (String(e.SOCKS5_WL_FLAG || '').toLowerCase() === 'true') put('socks5-wl', 'on');
+    put('socks5-ips', e.SOCKS5_IPS);
+    if (String(e.SUBSCRIBE || '').toLowerCase() === 'true') put('subscribe', 'true');
+    put('nginx_pt', e.NGINX_PT);
+    put('report-base', e.REPORT_BASE);
+    put('report-token', e.REPORT_TOKEN);
+    put('report-machine-auto', e.REPORT_MACHINE);
+    if (e.REPORT_EXCLUDE) {
+      var ex = e.REPORT_EXCLUDE.split(',').map(function (x) { return x.trim(); }).filter(function (x) { return !!x; });
+      document.querySelectorAll('.report-ex').forEach(function (c) {
+        c.checked = ex.indexOf(c.value) >= 0;
+        n++;
+      });
+    }
+    if (p.tail) put('sb-tail', p.tail);
+    return n;
+  }
+
+  function applyMtp(p) {
+    var e = p.env, n = 0;
+    function put(id, v) {
+      if (v == null || v === '') return;
+      var el = $id(id);
+      if (!el) { APPLY_FAIL.push(id); return; }
+      el.value = v;
+      if (el.tagName === 'SELECT' && el.value !== v) {
+        // 下拉框选项里没有这个值：忽略大小写再试一次，仍不行就记下来（例如 ippz=20500 这类环境变量语义已变的值）
+        var hit = null;
+        [].forEach.call(el.options, function (o) {
+          if (hit === null && String(o.value).toLowerCase() === String(v).toLowerCase()) hit = o.value;
+        });
+        if (hit === null) { APPLY_FAIL.push(id + '=' + v); return; }
+        el.value = hit;
+      }
+      n++;
+    }
+    var MG = ['adduser', 'moduser', 'deluser', 'users', 'getuser'];
+    if (p.tail && MG.indexOf(p.tail) >= 0) {
+      // Telemt 子账号管理命令：与「安装」是两条独立通道
+      var ready = $id('mg-ready');
+      if (ready) { ready.checked = true; n++; }
+      put('mtpn-mode', 'telemt');
+      put('mg-cmd', p.tail);
+      put('mg-user', e.TELEMT_USER);
+      put('mg-quota', e.TELEMT_QUOTA);
+      put('mg-expire', e.TELEMT_EXPIRE);
+      put('mg-port', e.TELEMT_DEDICATED_PORT);
+      put('mg-secret', e.TELEMT_SECRET);
+      return n;
+    }
+    var mode = String(e.INSTALL_MODE || '').toLowerCase() === 'telemt' ? 'telemt' : 'go';
+    put('mtpn-mode', mode);
+    put('mtpn-port', e.PORT);
+    put('mtpn-domain', e.DOMAIN);
+    put('mtpn-ipmode', e.IP_MODE);
+    if (mode === 'go') {
+      put('mtpn-secret', e.SECRET);
+    } else {
+      put('mtpn-user', e.TELEMT_USER);
+      put('mtpn-secret', e.TELEMT_SECRET);
+      put('mtpn-quota', e.TELEMT_QUOTA);
+      put('mtpn-expire', e.TELEMT_EXPIRE);
+      put('mtpn-sup', e.TELEMT_SPEED_UP);
+      put('mtpn-sdn', e.TELEMT_SPEED_DOWN);
+      put('mtpn-reset', e.TELEMT_RESET_DAY);
+    }
+    if (p.tail) put('mtpn-tail', p.tail);
+    return n;
+  }
+
+  function applyPastedCommand(text) {
+    var p = parseCmdText(text);
+    if (!p || !p.keys.length) return false;
+    var tab = p.script || 'sb';
+    APPLY_FAIL = [];
+    switchTab(tab);
+    resetForm(tab);
+    var n = tab === 'sb' ? applySb(p) : applyMtp(p);
+    if (tab === 'mtpnew') syncMtpnMode();
+    regen();
+    var extra = APPLY_FAIL.length ? '；' + APPLY_FAIL.length + ' 项未匹配（' + APPLY_FAIL.slice(0, 4).join('、') + '，该版本下拉框没有这个值）' : '';
+    var isMg = tab === 'mtpnew' && ['adduser', 'moduser', 'deluser', 'users', 'getuser'].indexOf(p.tail) >= 0;
+    var tailWhere = isMg ? '，子账号命令已生成在 ④ 的框里' : '，下方命令已按回填结果重新生成';
+    flashNote('✅ 已按粘贴的命令回填 ' + n + ' 项设置（' + (tab === 'sb' ? 'sb.sh' : 'mtp-new.sh') +
+      (p.tail ? ' · ' + p.tail : '') + '）' + extra + tailWhere + '；请核对一遍再复制。', !!APPLY_FAIL.length);
+    return true;
   }
 
   /* ---------------- 事件绑定 ---------------- */
@@ -1936,6 +2253,7 @@
 
   document.addEventListener('input', function (e) {
     var t = e.target;
+    if (t && t.id === 'cmd') return;   // 命令框允许临时粘外部命令，由 paste/blur 处理
     if (t && t.id && /^(hy_sni|vl_sni|tu_sni|any_sni)$/.test(t.id)) {
       var s = document.querySelector('select.sni-pick[data-target="' + t.id + '"]');
       if (s) s.selectedIndex = 0;
@@ -1974,6 +2292,44 @@
     flashBtn($id('copy'), await copyText($id('cmd').value));
   });
   $id('reset').addEventListener('click', function () { location.reload(); });
+
+  /* ---------------- 命令框：粘贴 / 失焦 → 反推回填 ---------------- */
+  function focusCmd() {
+    var c = $id('cmd');
+    c.focus();
+    try { c.setSelectionRange(c.value.length, c.value.length); } catch (_) {}
+  }
+  $id('cmd').addEventListener('paste', function (ev) {
+    var cd = ev.clipboardData || window.clipboardData;
+    var txt = cd ? cd.getData('text') : '';
+    if (!txt) return;
+    ev.preventDefault();
+    if (!applyPastedCommand(txt)) {
+      $id('cmd').value = LAST_GEN;
+      flashNote('⚠️ 没识别出命令：需要包含 KEY=… 变量或 bash <(curl -Ls …/sb.sh)，当前设置未改动。', true);
+    }
+  });
+  $id('cmd').addEventListener('focus', function () {
+    if (!LAST_GEN) LAST_GEN = $id('cmd').value;
+    flashNote('可以直接粘贴外部命令（Ctrl/⌘+V），松开手就会按命令反推回填左侧全部设置。', false);
+  });
+  $id('cmd').addEventListener('blur', function () {
+    var v = $id('cmd').value.trim();
+    if (!v || v === LAST_GEN) return;
+    if (!applyPastedCommand(v)) {
+      $id('cmd').value = LAST_GEN;
+      flashNote('⚠️ 这段内容里没有可识别的 KEY=… 或 bash <(curl …)，已还原成当前设置生成的命令。', true);
+    }
+  });
+  var pasteBtn = $id('paste-parse');
+  if (pasteBtn) pasteBtn.addEventListener('click', function () {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then(function (txt) {
+        if (!txt || !txt.trim()) { flashNote('剪贴板是空的：请点下方命令框后按 Ctrl/⌘+V 粘贴。', true); focusCmd(); return; }
+        if (!applyPastedCommand(txt)) flashNote('⚠️ 剪贴板内容不是可识别的命令（需要 KEY=… 或 bash <(curl …)）。', true);
+      }).catch(function () { flashNote('浏览器拒绝了读取剪贴板：请点下方命令框后按 Ctrl/⌘+V 粘贴。', true); focusCmd(); });
+    } else { flashNote('当前浏览器不支持读取剪贴板：请点下方命令框后按 Ctrl/⌘+V 粘贴。', true); focusCmd(); }
+  });
 
   /* ---------------- 主题 ---------------- */
   var themeBtn = $id('theme-btn');
@@ -2079,7 +2435,8 @@
   if (!$id('mtpn-port').value) $id('mtpn-port').value = String(randPort());
   if (!$id('mtpn-secret').value) $id('mtpn-secret').value = genHex32();
   initCardNums();
-syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode(); syncWsCdn(); syncReport();
+  captureDefaults();
+  syncArgoPort(); syncNginx(); syncWl(); syncMtpnMode(); syncWsCdn(); syncReport();
   regen();
 })();
 </script>
